@@ -1,0 +1,3855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f766e" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="截面实验台" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<title>立体几何 · 截面实验台（离线版）</title>
+<style>
+:root{
+  --bg:#f2f5f9; --panel:#ffffff; --line:#e2e8f0; --line2:#eef2f7;
+  --txt:#1e293b; --muted:#64748b; --muted2:#94a3b8;
+  --teal:#0d9488; --teal-d:#0f766e; --teal-l:#ccfbf1;
+  --indigo:#4f46e5; --amber:#f59e0b; --amber-l:#fef3c7;
+  --rose:#e11d48; --rose-l:#ffe4e6;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--txt); background:var(--bg); display:flex; flex-direction:column; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+header{
+  height:52px; flex:0 0 52px; display:flex; align-items:center; gap:14px; padding:0 16px;
+  background:linear-gradient(90deg,#0f766e,#0d9488 55%,#14b8a6); color:#fff; box-shadow:0 1px 6px rgba(15,23,42,.18);
+  z-index:5;
+}
+header .brand{font-size:15px;font-weight:700;letter-spacing:.5px}
+header .brand small{font-weight:400;opacity:.8;font-size:11px;margin-left:6px}
+header .ops{margin-left:auto;display:flex;align-items:center;gap:8px}
+header .tip{font-size:11px;opacity:.9;background:rgba(255,255,255,.14);padding:4px 10px;border-radius:20px}
+main{flex:1;display:grid;grid-template-columns:300px 1fr 384px;overflow:hidden;min-height:0}
+.panel{background:var(--panel);overflow-y:auto;overflow-x:hidden;padding:10px 12px 40px}
+.panel.left{border-right:1px solid var(--line)}
+.panel.right{border-left:1px solid var(--line)}
+.panel::-webkit-scrollbar{width:8px}
+.panel::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+.stage{position:relative;background:
+  radial-gradient(120% 120% at 50% 0%,#ffffff 0%,#f8fafc 55%,#eef2f7 100%);}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#scene.grabbing{cursor:grabbing}
+#scene.picking{cursor:crosshair}
+.hud{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.88);border:1px solid var(--line);
+  border-radius:8px;padding:7px 10px;font-size:11px;color:var(--muted);backdrop-filter:blur(4px);line-height:1.7}
+.hud b{color:var(--txt);font-weight:600}
+details{border:1px solid var(--line);border-radius:9px;margin-bottom:9px;background:#fff;overflow:hidden}
+summary{cursor:pointer;padding:8px 10px;font-weight:600;font-size:12.5px;background:#f8fafc;
+  list-style:none;display:flex;align-items:center;gap:6px;user-select:none;border-bottom:1px solid transparent}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--teal);font-size:11px;transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details[open]>summary{border-bottom:1px solid var(--line2)}
+.dbody{padding:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:16px;padding:5px 11px;font-size:12px;cursor:pointer;color:#475569}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+.palette{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 10px}
+.swx{width:25px;height:25px;border-radius:6px;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.swx.on{box-shadow:0 0 0 2.5px var(--teal)}
+.vstat{font-size:11px;color:var(--teal-d);font-weight:600}
+.facelist{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.fcell{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;background:#fff;aspect-ratio:1/1}
+.fcell canvas{width:100%;height:100%;display:block}
+.fcell b{position:absolute;left:3px;bottom:2px;font-size:10px;background:rgba(255,255,255,.85);padding:0 3px;border-radius:4px;color:#334155;font-weight:600}
+.fcell.on{box-shadow:0 0 0 2.5px var(--teal);border-color:var(--teal)}
+.row{display:grid;grid-template-columns:88px 1fr 62px;align-items:center;gap:8px;margin:7px 0}
+.row>span{font-size:11.5px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row>em{font-style:normal;font-size:10.5px;color:var(--muted2)}
+.layers{display:flex;flex-wrap:wrap;gap:4px;align-content:center}
+.lbtn{flex:0 0 auto;min-width:23px;height:23px;padding:0 4px;border:1px solid var(--line);background:#fff;
+  border-radius:6px;font-size:11px;font-weight:700;color:#475569;cursor:pointer;line-height:21px;
+  text-align:center;font-family:inherit}
+.lbtn:hover{border-color:var(--teal);color:var(--teal)}
+.lbtn.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.lbtn.dir{min-width:auto;padding:0 7px;font-weight:600;color:var(--teal-d);background:#f0fdfa;border-color:#99f6e4}
+.layers-empty{font-size:11px;color:var(--muted2);padding:3px 2px;line-height:1.45}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:#e2e8f0;border-radius:3px;outline:none;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--teal);border:2px solid #fff;box-shadow:0 0 0 1px var(--teal);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--teal);border:2px solid #fff;cursor:pointer}
+input[type=number],input[type=text],select{border:1px solid var(--line);border-radius:6px;padding:4px 6px;
+  font:inherit;font-size:12px;color:var(--txt);width:100%;background:#fff;outline:none;min-width:0}
+input[type=number]:focus,select:focus{border-color:var(--teal)}
+select{cursor:pointer}
+input:disabled{background:#f1f5f9;color:var(--muted2)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 10px;font:inherit;font-size:12px;
+  cursor:pointer;color:#334155;transition:.12s}
+.btn:hover{border-color:var(--teal);color:var(--teal)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--teal-d);color:#fff}
+.btn.warn{color:var(--rose);border-color:#fecdd3}
+.btn.warn:hover{background:var(--rose);color:#fff;border-color:var(--rose)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.sw{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#475569;margin:5px 0}
+.sw input{accent-color:var(--teal)}
+.hintline{font-size:11px;color:var(--muted);line-height:1.6;margin:6px 0 0}
+.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.tabs div{flex:1;text-align:center;padding:7px 4px;font-size:12px;cursor:pointer;background:#f8fafc;color:var(--muted)}
+.tabs div+div{border-left:1px solid var(--line)}
+.tabs div.on{background:var(--teal);color:#fff;font-weight:600}
+table.pts{width:100%;border-collapse:collapse;font-size:11.5px}
+table.pts th{background:#f8fafc;color:var(--muted);font-weight:600;padding:5px 3px;border-bottom:1px solid var(--line);text-align:center}
+table.pts td{padding:3px 2px;border-bottom:1px solid var(--line2);text-align:center;vertical-align:middle}
+table.pts td input{width:58px;padding:2px 4px;font-size:11px;text-align:center;border-radius:5px}
+table.pts td.del{cursor:pointer;color:var(--rose);font-weight:700;width:22px}
+table.pts td.del:hover{background:var(--rose-l);border-radius:5px}
+.tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;background:#e0f2fe;color:#0369a1}
+.tag.e{background:#fef3c7;color:#b45309}
+.tag.m{background:#ede9fe;color:#6d28d9}
+#sec2d{width:100%;height:230px;display:block;background:#fff;border:1px solid var(--line);border-radius:8px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.metric{background:#f8fafc;border:1px solid var(--line2);border-radius:7px;padding:6px 8px;text-align:center}
+.metric b{display:block;font-size:13.5px;color:var(--teal-d);font-variant-numeric:tabular-nums}
+.metric span{font-size:10.5px;color:var(--muted)}
+.alert{margin-top:9px;padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.6;display:none}
+.alert.err{display:block;background:var(--rose-l);border:1px solid #fecdd3;color:#9f1239}
+.alert.ok{display:block;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857}
+.alert.info{display:block;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);z-index:99;
+  background:#0f172a;color:#fff;padding:9px 18px;border-radius:22px;font-size:12.5px;opacity:0;
+  pointer-events:none;transition:.25s;box-shadow:0 6px 22px rgba(15,23,42,.28);max-width:70vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.bad{background:#be123c}
+#toast.good{background:#047857}
+@supports (height:100dvh){ html,body{height:100dvh} }
+
+/* ---------- 响应式：平板 / 手机 ---------- */
+main{position:relative}
+@media (max-width:1180px){
+  main{grid-template-columns:264px 1fr 330px}
+}
+@media (max-width:1023px){
+  /* 平板竖屏 / 小平板横屏：右面板收成右侧抽屉，左面板和舞台并排 */
+  main{grid-template-columns:280px 1fr}
+  .panel.right{position:absolute;top:0;bottom:0;right:0;width:min(360px,86vw);z-index:30;
+    transform:translateX(101%);transition:transform .24s cubic-bezier(.4,0,.2,1);
+    box-shadow:-8px 0 26px rgba(15,23,42,.16)}
+  .panel.right.open{transform:none}
+}
+@media (max-width:819px){
+  /* 手机 / 极窄屏：两块面板都收成抽屉，舞台独占 */
+  main{grid-template-columns:1fr}
+  .panel.left{position:absolute;top:0;bottom:0;left:0;width:min(360px,88vw);z-index:30;
+    transform:translateX(-101%);transition:transform .24s cubic-bezier(.4,0,.2,1);
+    box-shadow:8px 0 26px rgba(15,23,42,.16)}
+  .panel.left.open{transform:none}
+  .panel.right{width:min(360px,92vw)}
+}
+/* 抽屉遮罩 */
+#scrim{position:absolute;inset:0;background:rgba(15,23,42,.34);z-index:25;
+  opacity:0;pointer-events:none;transition:opacity .24s}
+#scrim.on{opacity:1;pointer-events:auto}
+/* 抽屉开关按钮：只在需要时出现 */
+.pbtn{display:none;align-items:center;justify-content:center;min-height:34px;padding:0 13px;
+  border:1px solid rgba(255,255,255,.45);border-radius:18px;background:rgba(255,255,255,.14);
+  color:#fff;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.pbtn:active{background:rgba(255,255,255,.3)}
+@media (max-width:1023px){ #btnRight{display:inline-flex} .tip{display:none} }
+@media (max-width:819px){ #btnLeft{display:inline-flex} }
+/* 触摸设备：放大可点区域 */
+@media (pointer:coarse){
+  .chip{padding:9px 14px;font-size:13px}
+  .swx{width:34px;height:34px}
+  summary{padding:11px 10px}
+  .row{grid-template-columns:98px 1fr 58px;margin:9px 0}
+  input[type=range]{height:6px}
+  input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px}
+  input[type=number],input[type=text],select{padding:7px 8px;font-size:13px}
+  .btn{padding:9px 13px}
+  .fcell{border-radius:10px}
+  .lbtn{min-width:32px;height:32px;line-height:30px;font-size:13px;border-radius:8px}
+  .lbtn.dir{min-width:auto;padding:0 10px}
+  .hud{font-size:11.5px;padding:8px 12px}
+}
+/* iPhone 刘海 / 底部横条安全区 */
+header{height:calc(52px + env(safe-area-inset-top));flex-basis:calc(52px + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 16px 0}
+.panel{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+.hud{bottom:calc(12px + env(safe-area-inset-bottom))}
+body{-webkit-text-size-adjust:100%}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">立体几何 · 截面实验台<small>离线单文件 · 无外部依赖</small></div>
+  <div class="ops">
+    <div class="tip" id="tip">拖动旋转 · 滚轮缩放 · 右键平移 · 单击表面取点</div>
+    <button class="pbtn" id="btnLeft" type="button">☰ 参数</button>
+    <button class="pbtn" id="btnRight" type="button">工具 ▸</button>
+  </div>
+</header>
+
+<main>
+  <div id="scrim"></div>
+  <!-- ============ 左：建模参数 ============ -->
+  <aside class="panel left">
+    <details open><summary>工作模式</summary><div class="dbody">
+      <div class="chips" id="modeChips">
+        <div class="chip on" data-mode="solid">连续立体（柱 / 锥 / 台）</div>
+        <div class="chip" data-mode="voxel">立方体阵列（小方块）</div>
+        <div class="chip" data-mode="cube">正方体涂鸦（六面展开）</div>
+      </div>
+    </div></details>
+
+    <details open id="dlVox" style="display:none"><summary>阵列参数</summary><div class="dbody">
+      <div class="row"><span>阶数 n</span><input type="range" id="vn" min="2" max="6" step="1" value="3"><em id="vnv">27</em></div>
+      <div class="row"><span>小方块边长</span><input type="range" id="vcell" min="0.4" max="2" step="0.05" value="1.15"><em id="vcellv">1.15</em></div>
+      <div class="row"><span>块间缝隙</span><input type="range" id="vgap" min="0" max="0.4" step="0.01" value="0"><em id="vgapv">0.00</em></div>
+      <p class="hintline">阵列规模 <span class="vstat" id="vstat">27 / 27 块</span>　大立方体边长 <span class="vstat" id="vsize">3.45</span></p>
+    </div></details>
+
+    <details open id="dlCube" style="display:none"><summary>展开图 / 折叠</summary><div class="dbody">
+      <div class="row"><span>展开图</span>
+        <select id="netSel" style="grid-column:2/4"></select></div>
+      <div style="display:flex;gap:10px;align-items:center;margin:8px 0">
+        <canvas id="netPrev" width="120" height="96" style="border:1px solid var(--line);border-radius:7px;background:#fff"></canvas>
+        <div style="flex:1">
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn primary" id="btnFold">展开 / 合好</button>
+          </div>
+          <p class="hintline" id="netInfo">共 11 种标准展开图</p>
+        </div>
+      </div>
+      <div class="row"><span>展开程度</span><input type="range" id="foldR" min="0" max="1" step="0.01" value="0"><em id="foldV">0.00</em></div>
+      <div class="sw"><input type="checkbox" id="opFlatTex" checked><label for="opFlatTex">展开图上六面都正着看（所见即所画）</label></div>
+      <p class="hintline">拖动滑块可停在半开状态；直接点立体上的面也能放大绘制。<br>
+        开启上式后：在展开图上点开某一面怎么画，「保存并返回」后就怎么显示，展开 / 合好时贴图跟着面一起转；关掉则按真实折叠还原（有些面会随之侧倒）。</p>
+    </div></details>
+
+    <details open id="dlCubeFaces" style="display:none"><summary>六个面（点击开始画）</summary><div class="dbody">
+      <div class="facelist" id="faceList"></div>
+      <div class="btn-row">
+        <button class="btn" id="btnClearAll">清空六面</button>
+      </div>
+    </div></details>
+
+    <details open id="dlBrush" style="display:none"><summary>涂色 / 挖块</summary><div class="dbody">
+      <div class="chips" id="brushChips">
+        <div class="chip on" data-brush="view">浏览取点</div>
+        <div class="chip" data-brush="paint">涂色</div>
+        <div class="chip" data-brush="cut">挖除</div>
+        <div class="chip" data-brush="fill">填回</div>
+      </div>
+      <div class="palette" id="palette"></div>
+      <div class="row" id="rowFillDepth" style="display:none"><span>填回层次</span><div class="layers" id="fillLayers"></div><em id="vFillDepthV">—</em></div>
+      <div class="btn-row">
+        <button class="btn" id="vAll">全部填回</button>
+        <button class="btn" id="vNone">全部挖空</button>
+        <button class="btn primary" id="vSolid">统一单色</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="vRainbow">逐层配色</button>
+        <button class="btn" id="vRandom">随机点缀</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="vShell">只留外壳</button>
+        <button class="btn" id="vCore">挖去中心</button>
+      </div>
+      <p class="hintline" style="margin-top:8px"><b>透视剖层</b>：把挡在外面的层暂时拿掉，就能涂到 / 挖掉被包在里面的方块。</p>
+      <div class="row"><span>剖层方向</span>
+        <select id="peelAxis" style="grid-column:2/4">
+          <option value="x">沿 X 轴（左右）</option>
+          <option value="y" selected>沿 Y 轴（上下）</option>
+          <option value="z">沿 Z 轴（前后）</option>
+        </select></div>
+      <div class="row"><span>剖开层数</span><input type="range" id="peelN" min="-2" max="2" step="1" value="0"><em id="peelNv">关闭</em></div>
+      <div class="btn-row">
+        <button class="btn" id="btnPeelMid">剖到中心层</button>
+        <button class="btn" id="btnPeel0">恢复完整</button>
+      </div>
+      <p class="hintline">在「涂色 / 挖除 / 填回」下单击或按住拖动即可批量操作（此时右键拖动仍可旋转视角）；切回「浏览取点」后单击表面即为取点。<br>
+        <b>填回</b>：把鼠标移到挖空的位置会虚线框出<b>将被填回的空位</b>，单击即可恢复（被外壳挡住的空位先剖开外层也能点到）。</p>
+    </div></details>
+
+    <details open id="dlShape"><summary>图形类型</summary><div class="dbody">
+      <div class="chips" id="chips">
+        <div class="chip on" data-pre="prism">棱柱</div>
+        <div class="chip" data-pre="pyramid">棱锥</div>
+        <div class="chip" data-pre="frustum">棱台</div>
+        <div class="chip" data-pre="cyl">圆柱</div>
+        <div class="chip" data-pre="cone">圆锥</div>
+        <div class="chip" data-pre="fcone">圆台</div>
+        <div class="chip" data-pre="sphere">球</div>
+        <div class="chip" data-pre="ellipsoid">椭球</div>
+        <div class="chip" data-pre="regular">正多面体</div>
+        <div class="chip" data-pre="custom">自定义</div>
+      </div>
+      <div class="row"><span>底面类型</span>
+        <select id="baseType" style="grid-column:2/4">
+          <option value="poly">正多边形</option>
+          <option value="circle">圆（光滑曲面）</option>
+          <option value="custom">自定义多边形</option>
+        </select></div>
+      <div class="row"><span>侧面形态</span>
+        <select id="sideType" style="grid-column:2/4">
+          <option value="prism">柱体（顶面 ∥ 底面）</option>
+          <option value="frustum">台体（顶面缩小）</option>
+          <option value="cone">锥体（顶面收为一点）</option>
+        </select></div>
+      <div class="row" id="rowRegKind"><span>正多面体</span>
+        <select id="regKind" style="grid-column:2/4"></select></div>
+      <p class="hintline" id="regInfo"></p>
+      <div class="sw" id="swLattice"><input type="checkbox" id="opLattice" checked><label for="opLattice">显示经纬网格（球 / 椭球）</label></div>
+      <p class="hintline">「自定义多边形」可在下方展开面板中直接拖动轮廓点，不必逐个填坐标。</p>
+    </div></details>
+
+    <details open id="dlDims"><summary>尺寸参数（拖动或输入）</summary><div class="dbody" id="paramBox"></div></details>
+
+    <details id="dlBase"><summary>自定义底面轮廓（可直接拖动）</summary><div class="dbody">
+      <canvas id="baseEd" width="252" height="252"
+        style="width:100%;aspect-ratio:1/1;display:block;border:1px solid var(--line);border-radius:8px;background:#fff;touch-action:none;cursor:crosshair"></canvas>
+      <p class="hintline">拖动圆点改形状 · 空白处<b>单击加点</b> · 点上<b>双击删点</b>；坐标范围 ±1，实际尺寸由 R 缩放。</p>
+      <div class="btn-row">
+        <button class="btn" id="polyFromNow">换成正 n 边形</button>
+        <button class="btn" id="addBasePt">+ 增加顶点</button>
+        <button class="btn warn" id="resetBasePt">恢复默认</button>
+      </div>
+      <details><summary>精确坐标</summary>
+        <table class="pts" id="btable" style="margin-top:8px"></table>
+      </details>
+    </div></details>
+
+    <details><summary>显示选项</summary><div class="dbody">
+      <div class="sw"><input type="checkbox" id="opFaces" checked><label for="opFaces">填充面</label></div>
+      <div class="sw"><input type="checkbox" id="opEdges" checked><label for="opEdges">棱线</label></div>
+      <div class="sw"><input type="checkbox" id="opVerts"><label for="opVerts">顶点标记</label></div>
+      <div class="sw"><input type="checkbox" id="opGizmo" checked><label for="opGizmo">拖拽手柄（可手动拉伸）</label></div>
+      <div class="sw"><input type="checkbox" id="opDim" checked><label for="opDim">尺寸标注 R / h</label></div>
+      <div class="sw"><input type="checkbox" id="opVoid" checked><label for="opVoid">标出挖空位置（虚框）</label></div>
+      <div class="sw"><input type="checkbox" id="opGrid" checked><label for="opGrid">地面网格与坐标轴</label></div>
+      <div class="sw"><input type="checkbox" id="opAuto"><label for="opAuto">自动旋转（多角度观看）</label></div>
+      <div class="row" id="rowSeg" style="display:none"><span>曲面细分</span><input type="range" id="opSeg" min="12" max="72" step="4" value="48"><em id="opSegV">48</em></div>
+      <div class="row"><span>面不透明度</span><input type="range" id="opAlpha" min="0.15" max="1" step="0.02" value="1"><em id="opAlphaV">1.00</em></div>
+      <div class="btn-row"><button class="btn" id="btnView">重置视角</button></div>
+    </div></details>
+
+    <details><summary>使用说明</summary><div class="dbody">
+      <p class="hintline">
+        <b>0. 三个模式：</b>「连续立体」做棱柱 / 棱锥 / 棱台 / 圆柱 / 圆锥 / 圆台 / <b>球</b> / <b>椭球</b> / <b>正多面体</b>（四·六·八·十二·二十面体）；「立方体阵列」做 2³~6³ 小方块拼成的大立方体；「正方体涂鸦」给正方体六个面自由画图并按 11 种展开图摊平。<br>
+        <b>0.1 光滑体：</b>圆柱 / 圆锥 / 圆台 / 球 / 椭球按真实曲面着色，口沿和轮廓是光滑曲线，不再显示一段段等长的折线；想调网格粗细请到「显示选项 › 曲面细分」，球与椭球用「经线 / 纬线密度」。<br>
+        <b>0.2 参数：</b>球调半径 R；椭球调三个半轴 a / b / c（相等就是球）；正多面体调外接球半径 R 并在下拉里换种类，下方会显示面 / 棱 / 顶点数。<br>
+        <b>0.3 一键截面：</b>右栏「一键截面」列出这个立体<b>实际能切出</b>的形状（带 ✓ 的是已验证的），点一下直接切，滑块自动跟随；点「↻ 精扫全部可能」会做一次更仔细的搜索。<br>
+        <b>1. 建模：</b>拖滑块 / 填数值 / 直接拖动画布彩色手柄（R 底面半径、k 顶面缩放、h 高度、a 阵列整体尺寸）。<br>
+        <b>2. 阵列编辑：</b>选「涂色 / 挖除 / 填回」后单击或按住拖动小方块，鼠标所指的一格会先描边预览；快捷按钮可一键「统一单色 / 只留外壳 / 挖去中心 / 逐层配色」。<b>填回</b>时虚线框出的是将被恢复的空位（原有颜色保留）。<b>透视剖层</b>可把外层暂时拿掉，用来涂上／挖掉被包在里面的方块，点「恢复完整」即变回实心大立方体。此时<b>右键拖动</b>仍可旋转。<br>
+        <b>2.1 长按瞄准：自己挑要填哪一块。</b>填回画笔下，<b>长按约 0.4 秒</b>屏幕上的某个空位 → 这条视线上的所有空位都被锁定并列出来，底部弹出瞄准条：<br>
+        · 目标块画成<b>实心淡绿框</b>并标「目标」；它前面挡着的实心块标<b>橙色「前」</b>、后面的标<b>蓝色「后」</b>，三者之间用白虚线连起来——<b>一眼看清你要填的那块夹在哪两块之间</b>；<br>
+        · 瞄准条上 <b>1 2 3 …</b> 直接点你想填的那一块（编号从你最先看到的那块算起），也可左右拖动换层；<br>
+        · 长按后<b>可以松手</b>，此时照常拖动就能转视角，从侧面确认位置，再点「填这块」提交；点「取消」或换画笔即退出；<br>
+        · 提交后会有一圈<b>绿色脉冲</b>标出刚填回去的那块——内部的块被挡住看不见，靠它确认确实生效了。<br>
+        另外，「填回层次」条上的方向按钮可把编号顺序切成「由外向内 / 由内向外」，配合瞄准条按需使用。<br>
+        <b>3. 常见截面：</b>右栏选水平 / 铅垂 / 倾斜，调参即时呈现。<br>
+        <b>4. 自定义截面：</b>切回「浏览取点」，在表面<b>单击</b>取点（自动吸附顶点/棱；<b>点偏一点也不会落空</b>——鼠标 16px、手指 28px 内会吸附到最近的面，轻触手抖也不再被当成旋转），或在「按棱取点 / 坐标输入」里精确添加；≥3 点后点「确定截面」。<br>
+        <b>5. 校验：</b>不共面、近似共线都会明确提示并说明偏离量。<b>阵列的截面是按小方块一格一格画出来的</b>，格线就是方块分界；涂过色的块在截面上仍是自己的颜色，挖空的格子如实空着（就是洞）。<b>挖掉任意数量、任意位置的小方块后照样能切</b>：轮廓连不成闭合环时自动切成「逐块截口」，一个方块一格，截面积按格相加、周长只算外边界。<br>
+        <b>6. 涂鸦：</b>点任一空白面→放大绘制（画笔/橡皮、撤销、清空）→「保存并返回」；左栏可换展开图并「展开 / 合好」，展开态同样能点面继续画。默认按<b>所见即所画</b>处理：展开图上怎么画，返回后就怎么显示，展开 / 合好时贴图跟着面一起转。
+      </p>
+    </div></details>
+  </aside>
+
+  <!-- ============ 中：三维舞台 ============ -->
+  <section class="stage">
+    <canvas id="scene"></canvas>
+    <div class="hud" id="hud"></div>
+  </section>
+
+  <!-- ============ 右：截面 ============ -->
+  <aside class="panel right">
+    <div class="tabs" id="tabs">
+      <div class="on" data-tab="preset">常见截面</div>
+      <div data-tab="custom">自定义取点截面</div>
+    </div>
+
+    <!-- ---- 正方体涂鸦 ---- -->
+    <div id="tabCube" style="display:none">
+      <details open><summary>画笔工具</summary><div class="dbody">
+        <div class="chips">
+          <div class="chip on" data-tool="pen">画笔</div>
+          <div class="chip" data-tool="eraser">橡皮</div>
+        </div>
+        <div class="palette" id="penPalette"></div>
+        <div class="row"><span>自定义色</span><input type="color" id="penColor" value="#e11d48" style="grid-column:2/4;height:28px;padding:2px"></div>
+        <div class="row"><span>笔触粗细</span><input type="range" id="penW" min="1" max="40" step="1" value="9"><em id="penWv">9</em></div>
+      </div></details>
+      <details open><summary>当前面操作</summary><div class="dbody">
+        <p class="hintline" id="cubeNow">未选中面：请在立体上单击任一空白面开始绘制。</p>
+        <div class="btn-row">
+          <button class="btn" id="btnUndo">撤销一笔</button>
+          <button class="btn warn" id="btnClearFace">清空此面</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="btnSaveFace">保存并返回</button>
+        </div>
+      </div></details>
+      <details><summary>说明</summary><div class="dbody">
+        <p class="hintline">
+          合拢状态下点击任意面即可放大绘制；先在左栏选一种展开图并「展开」，再点面同样可以画。<br>
+          画完点「保存并返回」缩小，可继续选其他面；点「展开 / 合好」查看成品效果，滚轮可放大缩小观察。
+        </p>
+      </div></details>
+    </div>
+
+    <!-- ---- 常见截面 ---- -->
+    <div id="tabPreset">
+      <details open><summary>截面类型</summary><div class="dbody">
+        <div class="chips" id="pres">          <div class="chip on" data-sc="h">水平截面 ∥ 底面</div>
+          <div class="chip" data-sc="v">铅垂截面 ⊥ 底面</div>
+          <div class="chip" data-sc="t">倾斜截面</div>
+          <div class="chip" data-sc="none">隐藏截面</div>
+        </div>
+        <div class="row"><span>截面高度 s</span><input type="range" id="psS" min="0" max="1" step="0.005" value="0.5"><em id="psSv">0.50</em></div>
+        <div class="row"><span>方位角 φ</span><input type="range" id="psPhi" min="0" max="360" step="1" value="0"><em id="psPhiV">0°</em></div>
+        <div class="row"><span>离轴距离 r</span><input type="range" id="psR" min="0" max="1.6" step="0.005" value="0"><em id="psRv">0.00</em></div>
+        <div class="row"><span>倾角 θ</span><input type="range" id="psTheta" min="0" max="90" step="1" value="45"><em id="psThetaV">45°</em></div>
+        <div class="btn-row"><button class="btn primary" id="btnShowSec">显示 / 刷新截面</button></div>
+      </div></details>
+      <details open><summary>一键截面（按形状）</summary><div class="dbody">
+        <div class="chips" id="quickSec"></div>
+        <p class="hintline">点其中一个即可直接切出对应形状的截面，上方滑块会自动跟着走。</p>
+      </div></details>
+    </div>
+
+    <!-- ---- 自定义截面 ---- -->
+    <div id="tabCustom" style="display:none">
+      <details open><summary>已选点（≥3 个不共线且共面）</summary><div class="dbody">
+        <table class="pts" id="ptable">
+          <thead><tr><th>#</th><th>X</th><th>Y</th><th>Z</th><th>来源</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="btn-row">
+          <button class="btn primary" id="btnDoSec">✓ 确定截面</button>
+          <button class="btn" id="btnPop">删除末点</button>
+          <button class="btn warn" id="btnClr">清空</button>
+        </div>
+        <div class="alert" id="alert"></div>
+      </div></details>
+
+      <details id="dlEdge"><summary>按棱取点（输入长度）</summary><div class="dbody">
+        <div class="row"><span>目标线段</span>
+          <select id="edgeSel" style="grid-column:2/4"></select></div>
+        <div class="row"><span>起点起长度</span><input type="range" id="edT" min="0" max="1" step="0.001" value="0.5"><em id="edTv">0.500</em></div>
+        <div class="row"><span>数值 d</span><input type="number" id="edD" step="0.01" value="1"><em id="edTot">全长 —</em></div>
+        <div class="btn-row"><button class="btn" id="btnAddEdge">+ 添加该点</button></div>
+        <p class="hintline">长度沿所选线段从起点量起；数字输入框与滑块联动。</p>
+      </div></details>
+
+      <details><summary>坐标输入</summary><div class="dbody">
+        <div class="row"><span>X</span><input type="number" id="inx" step="0.01" value="0" style="grid-column:2/4"></div>
+        <div class="row"><span>Y</span><input type="number" id="iny" step="0.01" value="0" style="grid-column:2/4"></div>
+        <div class="row"><span>Z</span><input type="number" id="inz" step="0.01" value="0" style="grid-column:2/4"></div>
+        <div class="btn-row">
+          <button class="btn" id="btnAddXYZ">+ 添加该点</button>
+          <button class="btn" id="btnSnap">吸附到最近表面</button>
+        </div>
+        <div class="alert info" style="display:block">输入的坐标应落在立体表面上；可先点「吸附到最近表面」自动贴合。</div>
+      </div></details>
+    </div>
+
+    <!-- ---- 共用结果 ---- -->
+    <details open id="dlSec2d"><summary>截面平面图</summary><div class="dbody">
+      <canvas id="sec2d"></canvas>
+      <div class="metrics">
+        <div class="metric"><b id="mA">—</b><span>截面积</span></div>
+        <div class="metric"><b id="mP">—</b><span>周长</span></div>
+        <div class="metric"><b id="mN">—</b><span>边数</span></div>
+      </div>
+      <div class="alert" id="alert2"></div>
+    </div></details>
+  </aside>
+</main>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   0. 向量数学
+   ========================================================= */
+const addv=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const subv=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const mulv=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+const dotv=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const crossv=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const normv=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];};
+const distv=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+const lerpv=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt=(v,n)=>(Math.round(v*Math.pow(10,n))/Math.pow(10,n)).toFixed(n);
+
+function polyNormal(pts){            // Newell 法，支持轻微非平面多边形
+  let nx=0,ny=0,nz=0;
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    nx+=(a[1]-b[1])*(a[2]+b[2]);
+    ny+=(a[2]-b[2])*(a[0]+b[0]);
+    nz+=(a[0]-b[0])*(a[1]+b[1]);
+  }
+  return normv([nx,ny,nz]);
+}
+function avgPts(pts){
+  const s=[0,0,0];
+  pts.forEach(p=>{s[0]+=p[0];s[1]+=p[1];s[2]+=p[2];});
+  return mulv(s,1/pts.length);
+}
+function uniqSeq(arr){return arr.filter((v,i)=>arr.indexOf(v)===i);}
+
+/* Möller–Trumbore 射线三角形求交，返回 t（>0）或 null */
+function rayTri(o,d,a,b,c){
+  const e1=subv(b,a), e2=subv(c,a);
+  const p=crossv(d,e2), det=dotv(e1,p);
+  if(Math.abs(det)<1e-12) return null;
+  const inv=1/det, t=subv(o,a);
+  const u=dotv(t,p)*inv; if(u<-1e-9||u>1+1e-9) return null;
+  const q=crossv(t,e1);
+  const v=dotv(d,q)*inv; if(v<-1e-9||u+v>1+1e-9) return null;
+  const tt=dotv(e2,q)*inv;
+  return tt>1e-6?tt:null;
+}
+/* 射线与平面求交 */
+function rayPlane(o,d,pn,pd){
+  const dn=dotv(d,pn);
+  if(Math.abs(dn)<1e-8) return null;
+  const t=(pd-dotv(o,pn))/dn;
+  return t>1e-6?addv(o,mulv(d,t)):null;   // d 必须为单位向量
+}
+
+/* =========================================================
+   1. 状态
+   ========================================================= */
+const S={
+  baseType:'poly', sideType:'prism',
+  n:6, seg:48, R:2.2, h:3.6, topK:1, twist:0, offX:0, offZ:0,
+  opFaces:true, opEdges:true, opVerts:false, opGizmo:true, opDim:true, opGrid:true, opVoid:true, opacity:1, autoRot:false,
+  custom:[[1,0],[0.42,0.92],[-0.62,0.72],[-1,-0.32],[0.18,-1]],
+  model:null,
+  picks:[],
+  pid:1,
+  hoverPt:null,
+  section:null,          // {plane, poly, loops, info}
+  scType:'h', psS:0.5, psPhi:0, psR:0, psTheta:45,
+  mode:'solid',          // 'solid' 连续立体 | 'voxel' 立方体阵列 | 'cube' 正方体涂鸦
+  pre:'prism',           // 连续立体种类：prism/pyramid/frustum/cyl/cone/fcone/sphere/ellipsoid/regular/custom
+  regKind:'tetra', sR:2.2, eA:2.6, eB:1.6, eC:2.0, gR:2.4, lon:24, lat:16, lattice:true,
+  vox:{n:3, cell:1.15, gap:0, brush:'view', cur:1, cells:null,
+       peelAxis:'y', peel:0, hover:null, hoverKey:null,
+       fillDepth:0, fillN:0, fillList:null, fillIdx:0, fillOrder:'out', flash:null, aim:null},
+       // fillDepth：取第几层；fillOrder='out' 由外向内 / 'in' 由内向外（可用层次条上的按钮切换）
+       // aim：长按瞄准状态 {raw:[...], idx}，长按后由用户自己挑要填哪一块
+  cube:{net:0, t:0, netU:null, edit:-1, tool:'pen', color:'#e11d48', w:9,
+        flat:true, texOrder:null}      // flat：展开图上六面都正着看（所见即所画）
+};
+const cam={theta:-0.95, phi:0.42, dist:11.5, fov:36, target:[0,0,0]};
+
+/* ---------- 立方体阵列（体素）---------- */
+const VOX_PAINT=[[94,234,212],[248,113,113],[96,165,250],[251,191,36],
+                 [167,139,250],[52,211,153],[244,114,182],[148,163,184]];
+const VOX_HEX=['#5eead4','#f87171','#60a5fa','#fbbf24','#a78bfa','#34d399','#f472b6','#94a3b8'];
+function voxIdx(i,j,k){const n=S.vox.n;return i+j*n+k*n*n;}
+function voxAt(i,j,k){
+  const n=S.vox.n;
+  if(i<0||j<0||k<0||i>=n||j>=n||k>=n) return null;
+  return S.vox.cells[voxIdx(i,j,k)];
+}
+function voxReset(n){
+  if(n&&n!==S.vox.n){S.vox.n=n;S.vox.cells=null;}
+  const N=S.vox.n*S.vox.n*S.vox.n;
+  if(!S.vox.cells||S.vox.cells.length!==N){
+    S.vox.cells=new Array(N);
+    for(let i=0;i<N;i++) S.vox.cells[i]={on:true,c:0};
+  }
+}
+function voxCount(){let a=0;for(const c of S.vox.cells) if(c.on) a++;return a;}
+function voxTotal(){return S.vox.cells.length;}
+function voxSize(){return S.vox.n*S.vox.cell;}
+/* ---- 透视剖层：把外层挡住的部分暂时拿掉，才能涂到被包在里面的方块 ---- */
+function voxPeelOK(i,j,k){
+  const p=S.vox.peel; if(!p) return true;
+  const n=S.vox.n, t=(S.vox.peelAxis==='x')?i:(S.vox.peelAxis==='y'?j:k);
+  return p>0 ? (t<n-p) : (t>=-p);          // >0：从大号端往里剖；<0：从小号端往里剖
+}
+function voxShown(i,j,k){const c=voxAt(i,j,k);return !!(c&&c.on&&voxPeelOK(i,j,k));}
+function voxMaxPeel(){return S.vox.n-1;}
+function voxVisibleCount(){
+  let a=0; const n=S.vox.n;
+  for(let k=0;k<n;k++)for(let j=0;j<n;j++)for(let i=0;i<n;i++) if(voxShown(i,j,k)) a++;
+  return a;
+}
+function peelText(){
+  const p=S.vox.peel; if(!p) return '关闭（显示完整）';
+  const ax={x:'X',y:'Y',z:'Z'}[S.vox.peelAxis];
+  return (p>0?'从 +'+ax+' 侧剖开 '+p+' 层':'从 -'+ax+' 侧剖开 '+(-p)+' 层');
+}
+/* ---- 体素射线步进：找到沿视线遇到的第 N 个格子（用来隔着外壳操作内部 / 空缺） ---- */
+function voxRayList(sx,sy,B,pred,maxN){          // 沿射线收集所有符合条件的格子（由外向内）
+  const out=[], cap=maxN||8;
+  const n=S.vox.n, cell=S.vox.cell, half=n*cell/2;
+  const ray=screenRay(sx,sy,B), o=ray.o, d=ray.d;
+  let t0=0, t1=1e9;
+  for(let a=0;a<3;a++){
+    if(Math.abs(d[a])<1e-9){ if(o[a]<-half||o[a]>half) return out; continue; }
+    let ta=(-half-o[a])/d[a], tb=(half-o[a])/d[a];
+    if(ta>tb){const tt=ta;ta=tb;tb=tt;}
+    t0=Math.max(t0,ta); t1=Math.min(t1,tb);
+  }
+  if(t0>t1) return out;
+  const st=[0,1,2].map(a=>d[a]>=0?1:-1);
+  const t=t0+1e-4;
+  let i=Math.floor((o[0]+d[0]*t+half)/cell), j=Math.floor((o[1]+d[1]*t+half)/cell), k=Math.floor((o[2]+d[2]*t+half)/cell);
+  for(let s=0;s<=3*n+8;s++){
+    if(i>=0&&i<n&&j>=0&&j<n&&k>=0&&k<n){
+      if(!pred||pred(i,j,k)){
+        out.push({i,j,k});
+        if(out.length>=cap) return out;
+      }
+    }
+    const nx=(st[0]>0?(i+1)*cell:i*cell)-half, ny=(st[1]>0?(j+1)*cell:j*cell)-half, nz=(st[2]>0?(k+1)*cell:k*cell)-half;
+    const tx=Math.abs(d[0])<1e-9?1e9:(nx-o[0])/d[0],
+          ty=Math.abs(d[1])<1e-9?1e9:(ny-o[1])/d[1],
+          tz=Math.abs(d[2])<1e-9?1e9:(nz-o[2])/d[2];
+    if(tx<=ty&&tx<=tz) i+=st[0]; else if(ty<=tz) j+=st[1]; else k+=st[2];
+  }
+  return out;
+}
+function voxRay(sx,sy,B,pred){                   // 兼容旧调用：只取第一个命中的格子
+  const r=voxRayList(sx,sy,B,pred,1);
+  return r.length?r[0]:null;
+}
+/* 当前画笔指向的格子：涂色/挖除取表面命中的那一块，填回取视线上的第一个空缺 */
+function voxTarget(sx,sy,B){
+  const b=S.vox.brush;
+  if(b==='fill'){
+    // 射线上所有空位。voxRayList 返回的顺序是「由外向内」（离相机近的在前）。
+    const raw=voxRayList(sx,sy,B,(a,b2,c2)=>{const q=voxAt(a,b2,c2);return !!q&&!q.on;},16);
+    // 按用户选的顺序重排：'in' = 最里面那层排第 1 位（默认，符合"先填靠里面的"直觉）
+    const list=(S.vox.fillOrder==='in')?raw.slice().reverse():raw;
+    S.vox.fillN=list.length;
+    S.vox.fillList=list;
+    if(!list.length){ S.vox.fillIdx=0; return null; }
+    const d=Math.max(0,Math.min((S.vox.fillDepth|0),list.length-1));
+    S.vox.fillDepth=d; S.vox.fillIdx=d;
+    return list[d];
+  }
+  const hit=pickSurface(sx,sy,B);
+  if(!hit||!hit.vox) return null;
+  const v=hit.vox;
+  const c=voxAt(v[0],v[1],v[2]);
+  return (c&&c.on)?{i:v[0],j:v[1],k:v[2]}:null;
+}
+let lastVoxPt=null;                 // 最后一次悬停位置：改层次/顺序后要靠它重算，不用再动指针
+function updateVoxHover(sx,sy,B){
+  lastVoxPt={x:sx,y:sy};
+  if(S.vox.aim) return;                        // 瞄准中：目标由瞄准条决定，别被普通悬停覆盖
+  const t=(S.mode==='voxel'&&S.vox.brush!=='view')?voxTarget(sx,sy,B):null;
+  const key=t?t.i+','+t.j+','+t.k:null;
+  if(key!==S.vox.hoverKey){S.vox.hoverKey=key;S.vox.hover=t;
+    if(S.vox.brush==='fill') syncFillDepth();
+    invalidate();}
+}
+const VOX_DIR=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+function voxCorners(hs){
+  return [
+    [[hs,-hs,-hs],[hs,hs,-hs],[hs,hs,hs],[hs,-hs,hs]],
+    [[-hs,-hs,-hs],[-hs,-hs,hs],[-hs,hs,hs],[-hs,hs,-hs]],
+    [[-hs,hs,-hs],[-hs,hs,hs],[hs,hs,hs],[hs,hs,-hs]],
+    [[-hs,-hs,-hs],[hs,-hs,-hs],[hs,-hs,hs],[-hs,-hs,hs]],
+    [[-hs,-hs,hs],[hs,-hs,hs],[hs,hs,hs],[-hs,hs,hs]],
+    [[-hs,-hs,-hs],[-hs,hs,-hs],[hs,hs,-hs],[hs,-hs,-hs]]
+  ];
+}
+function buildVoxel(){
+  const n=S.vox.n, cell=S.vox.cell;
+  const gap=Math.min(S.vox.gap,cell*0.45);
+  const hs=(cell-gap)/2, half=n*cell/2;
+  const CORN=voxCorners(hs);
+  const verts=[], faces=[], edges=[];
+  for(let k=0;k<n;k++)for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+    const c=voxAt(i,j,k); if(!c||!c.on||!voxPeelOK(i,j,k)) continue;   // 挖除 或 被剖掉
+    const cx=(i+0.5)*cell-half, cy=(j+0.5)*cell-half, cz=(k+0.5)*cell-half;
+    const tag='块('+(i+1)+','+(j+1)+','+(k+1)+')';
+    for(let d=0;d<6;d++){
+      const a=i+VOX_DIR[d][0], b=j+VOX_DIR[d][1], e=k+VOX_DIR[d][2];
+      if(voxShown(a,b,e)&&gap<=1e-9) continue;        // 内部贴合面不生成
+      const inRange=(a>=0&&a<n&&b>=0&&b<n&&e>=0&&e<n);
+      const nb=inRange?voxAt(a,b,e):null;
+      // 邻格在阵列内却被挖空 → 这是凹进去的内壁，渲染时压暗才有凹陷感
+      const inner=inRange&&(!nb||!nb.on);
+      const pts=CORN[d].map(p=>[cx+p[0],cy+p[1],cz+p[2]]);
+      const idx=pts.map(p=>{verts.push(p);return verts.length-1;});
+      if(dotv(polyNormal(pts),VOX_DIR[d])<0) idx.reverse();
+      const f={idx, type:'vox', n:VOX_DIR[d].slice(), vox:[i,j,k], col:c.c, inner};
+      f.c=avgPts(pts);
+      faces.push(f);
+      for(let a=0;a<4;a++){
+        const p=idx[a], q=idx[(a+1)%4];
+        edges.push({name:tag+' 边'+(a+1), a:p, b:q});
+      }
+    }
+  }
+  for(const e of edges){e.pa=verts[e.a]; e.pb=verts[e.b]; e.len=distv(e.pa,e.pb);}
+  const sz=voxSize();
+  return {verts, faces, edges, vox:true, m:0, apex:false,
+          center:[0,0,0], y0:-sz/2, y1:sz/2, maxR:sz*0.9, diag:Math.max(1e-6,sz*1.74),
+          baseSet:new Set(), topSet:new Set(), edgeFaces:new Map(), vnorm:null, smoothRings:[]};
+}
+
+/* =========================================================
+   2. 建模
+   ========================================================= */
+function baseRing(){
+  if(S.baseType==='custom') return S.custom.map(p=>[p[0]*S.R,p[1]*S.R]);
+  const n=S.baseType==='circle'?S.seg:S.n;
+  const out=[];
+  for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;out.push([S.R*Math.cos(a),S.R*Math.sin(a)]);}
+  return out;
+}
+/* =========================================================
+   2.2 球 / 椭球 / 正多面体
+   ========================================================= */
+function buildSpheroid(a,b,c,lon,lat){        // 球（a=b=c=R）与椭球共用一个构造器
+  lon=Math.max(6,Math.round(lon)); lat=Math.max(3,Math.round(lat));
+  const verts=[], grid=[];
+  const north=0; verts.push([0,b,0]);
+  for(let i=1;i<lat;i++){
+    const th=Math.PI*i/lat, st=Math.sin(th), row=[];
+    for(let j=0;j<lon;j++){
+      const ph=2*Math.PI*j/lon;
+      row.push(verts.length);
+      verts.push([a*st*Math.cos(ph), b*Math.cos(th), c*st*Math.sin(ph)]);
+    }
+    grid.push(row);
+  }
+  const south=verts.length; verts.push([0,-b,0]);
+  const faces=[], edgeFaces=new Map(), rings=[];
+  const link=(fi,arr)=>{
+    for(let i=0;i<arr.length;i++){
+      const p=arr[i], q=arr[(i+1)%arr.length];
+      const key=Math.min(p,q)+'_'+Math.max(p,q);
+      if(!edgeFaces.has(key)) edgeFaces.set(key,[]);
+      const lst=edgeFaces.get(key); if(lst.indexOf(fi)<0) lst.push(fi);
+    }
+  };
+  const addFace=arr=>{ const fi=faces.length; faces.push({idx:arr,type:'side'}); link(fi,arr); };
+  for(let j=0;j<lon;j++) addFace([north,grid[0][j],grid[0][(j+1)%lon]]);
+  for(let r=0;r+1<grid.length;r++) for(let j=0;j<lon;j++){
+    const j2=(j+1)%lon;
+    addFace([grid[r][j],grid[r+1][j],grid[r+1][j2],grid[r][j2]]);
+  }
+  const last=grid[grid.length-1];
+  for(let j=0;j<lon;j++) addFace([last[j],south,last[(j+1)%lon]]);
+  for(const f of faces){
+    let nn=polyNormal(f.idx.map(i=>verts[i]));
+    const fc=avgPts(f.idx.map(i=>verts[i]));
+    if(dotv(nn,fc)<0){ f.idx.reverse(); nn=mulv(nn,-1); }   // 法线一律朝外
+    f.n=normv(nn); f.c=fc; f.smooth=true;
+  }
+  const vnorm=verts.map(v=>normv([v[0]/(a*a),v[1]/(b*b),v[2]/(c*c)]));   // 椭球的真实外法线
+  // 经纬网格（可开关）
+  const step=Math.max(1,Math.round(lon/12));
+  for(let j=0;j<lon;j+=step) rings.push([north].concat(grid.map(r=>r[j])).concat([south]));
+  const rst=Math.max(1,Math.round(grid.length/8));
+  for(let r=0;r<grid.length;r+=rst) rings.push(grid[r].concat([grid[r][0]]));
+  const maxR=Math.max(a,c), dg=2*Math.max(a,b,c);
+  return {verts,faces,edges:[],baseIdx:[],topIdx:[],apex:false,m:0,center:[0,0,0],
+          y0:-b,y1:b,maxR,diag:Math.max(1e-6,dg),
+          baseSet:new Set(),topSet:new Set(),edgeFaces,
+          vnorm,smoothRings:[],
+          sph:true,rings,ra:a,rb:b,rc:c};
+}
+const PHI=(1+Math.sqrt(5))/2;
+const REG_SOLIDS={
+  tetra:{label:'正四面体',   name:'正四面体',   cir:Math.sqrt(3)},
+  hexa: {label:'正六面体',   name:'正六面体',   cir:Math.sqrt(3)},
+  octa: {label:'正八面体',   name:'正八面体',   cir:1},
+  dodeca:{label:'正十二面体', name:'正十二面体', cir:Math.sqrt(3)},
+  icosa:{label:'正二十面体', name:'正二十面体', cir:Math.sqrt(1+PHI*PHI)}
+};
+const REG_KEYS=['tetra','hexa','octa','dodeca','icosa'];
+function regBaseVerts(kind){
+  if(kind==='tetra') return [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]];
+  if(kind==='octa')  return [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  const out=[];
+  if(kind==='hexa'){
+    for(const sx of[1,-1])for(const sy of[1,-1])for(const sz of[1,-1]) out.push([sx,sy,sz]);
+  }else if(kind==='dodeca'){
+    for(const sx of[1,-1])for(const sy of[1,-1])for(const sz of[1,-1]) out.push([sx,sy,sz]);
+    const p=1/PHI, q=PHI;
+    for(const s1 of[1,-1])for(const s2 of[1,-1]){
+      out.push([0,s1*p,s2*q]); out.push([s1*p,s2*q,0]); out.push([s1*q,0,s2*p]);
+    }
+  }else{
+    const q=PHI;
+    for(const s1 of[1,-1])for(const s2 of[1,-1]){
+      out.push([0,s1,s2*q]); out.push([s1,s2*q,0]); out.push([s1*q,0,s2]);
+    }
+  }
+  return out;
+}
+function hullFaces(pts,eps){                  // 凸包：先找支撑平面，再取出面上全部点排序成多边形
+  const seen=new Set(), out=[];
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++)for(let k=j+1;k<pts.length;k++){
+    let nn=polyNormal([pts[i],pts[j],pts[k]]);
+    if(Math.hypot(nn[0],nn[1],nn[2])<1e-9) continue;
+    nn=normv(nn);
+    let d0=dotv(nn,pts[i]);
+    let pos=0,neg=0;
+    for(let m=0;m<pts.length;m++){
+      const dd=dotv(nn,pts[m])-d0;
+      if(dd>eps) pos++; else if(dd<-eps) neg++;
+    }
+    if(pos&&neg) continue;
+    if(nn[0]<-1e-9||(Math.abs(nn[0])<1e-9&&nn[1]<-1e-9)||(Math.abs(nn[0])<1e-9&&Math.abs(nn[1])<1e-9&&nn[2]<-1e-9)){
+      nn=mulv(nn,-1); d0=-d0;                 // 方向规范化，避免同一平面算两次
+    }
+    const key=[Math.round(nn[0]*1e4),Math.round(nn[1]*1e4),Math.round(nn[2]*1e4),Math.round(d0*1e4)].join(',');
+    if(seen.has(key)) continue; seen.add(key);
+    const co=[];
+    for(let m=0;m<pts.length;m++) if(Math.abs(dotv(nn,pts[m])-d0)<eps) co.push(m);
+    if(co.length<3) continue;
+    const ctr=avgPts(co.map(m=>pts[m]));
+    let u=Math.abs(nn[1])<0.9?[0,1,0]:[1,0,0];
+    u=normv(subv(u,mulv(nn,dotv(u,nn))));
+    const vv=normv(crossv(nn,u));
+    const ang=m=>Math.atan2(dotv(subv(pts[m],ctr),vv),dotv(subv(pts[m],ctr),u));
+    co.sort((A,B)=>ang(A)-ang(B));
+    out.push(co);
+  }
+  return out;
+}
+function buildRegular(){
+  const kind=S.regKind, R=S.gR;
+  const base=regBaseVerts(kind), k=R/REG_SOLIDS[kind].cir;
+  const verts=base.map(p=>mulv(p,k));
+  const eps=1e-4*Math.max(1,R);
+  const faces=[], edges=[], seen=new Set();
+  for(const co of hullFaces(verts,eps)){
+    faces.push({idx:co.slice(),type:'side'});
+    for(let i=0;i<co.length;i++){
+      const a=co[i], b=co[(i+1)%co.length];
+      const key=Math.min(a,b)+'_'+Math.max(a,b);
+      if(seen.has(key)) continue; seen.add(key);
+      edges.push({name:REG_SOLIDS[kind].name+' 棱 '+(edges.length+1),a,b});
+    }
+  }
+  for(const f of faces){
+    let nn=polyNormal(f.idx.map(i=>verts[i]));
+    const fc=avgPts(f.idx.map(i=>verts[i]));
+    if(dotv(nn,fc)<0){ f.idx.reverse(); nn=mulv(nn,-1); }
+    f.n=normv(nn); f.c=fc;
+  }
+  for(const e of edges){ e.pa=verts[e.a]; e.pb=verts[e.b]; e.len=distv(e.pa,e.pb); e.mid=lerpv(e.pa,e.pb,0.5); }
+  let maxR=0; verts.forEach(v=>{maxR=Math.max(maxR,Math.hypot(v[0],v[2]));});
+  return {verts,faces,edges,baseIdx:[],topIdx:[],apex:false,m:0,center:[0,0,0],
+          y0:-R,y1:R,maxR,diag:Math.max(1e-6,2*R),
+          baseSet:new Set(),topSet:new Set(),edgeFaces:new Map(),vnorm:null,smoothRings:[],
+          reg:true,nv:verts.length,ne:edges.length,nf:faces.length};
+}
+
+function buildModel(){
+  if(S.mode==='voxel') return buildVoxel();
+  if(S.mode==='cube') return buildCube();
+  if(S.pre==='sphere')    return buildSpheroid(S.sR,S.sR,S.sR,S.lon,S.lat);
+  if(S.pre==='ellipsoid') return buildSpheroid(S.eA,S.eB,S.eC,S.lon,S.lat);
+  if(S.pre==='regular')   return buildRegular();
+  const ring=baseRing(), m=ring.length, k=S.topK, h=S.h;
+  const tw=S.twist*Math.PI/180, cs=Math.cos(tw), sn=Math.sin(tw);
+  const y0=-h/2, y1=h/2;
+  const verts=[], baseIdx=[], topIdx=[];
+  for(const p of ring){ baseIdx.push(verts.length); verts.push([p[0],y0,p[1]]); }
+  const apex = k<=1e-6;
+  if(apex){
+    const ai=verts.length; verts.push([S.offX,y1,S.offZ]);
+    for(let i=0;i<m;i++) topIdx.push(ai);
+  }else{
+    for(const p of ring){
+      const rx=p[0]*cs-p[1]*sn, rz=p[0]*sn+p[1]*cs;
+      topIdx.push(verts.length); verts.push([k*rx+S.offX,y1,k*rz+S.offZ]);
+    }
+  }
+  const faces=[];
+  faces.push({idx:baseIdx.slice(), type:'base'});
+  if(!apex) faces.push({idx:topIdx.slice(), type:'top'});
+  for(let i=0;i<m;i++){
+    const j=(i+1)%m;
+    faces.push({idx:uniqSeq([baseIdx[i],baseIdx[j],topIdx[j],topIdx[i]]), type:'side', i});
+  }
+  // 法线朝向修正
+  const center=avgPts(verts);
+  for(const f of faces){
+    const pts=f.idx.map(i=>verts[i]);
+    let nn=polyNormal(pts);
+    const fc=avgPts(pts);
+    if(f.type==='base'){ if(nn[1]>0) f.idx.reverse(); }
+    else if(f.type==='top'){ if(nn[1]<0) f.idx.reverse(); }
+    else if(dotv(nn,subv(fc,center))<0) f.idx.reverse();
+    f.n=polyNormal(f.idx.map(i=>verts[i]));
+    f.c=avgPts(f.idx.map(i=>verts[i]));
+  }
+  // 线段清单（供按棱取点）
+  const edges=[];
+  for(let i=0;i<m;i++){
+    const j=(i+1)%m;
+    edges.push({name:'底边 '+(i+1), a:baseIdx[i], b:baseIdx[j]});
+  }
+  for(let i=0;i<m;i++) edges.push({name:'侧棱 '+(i+1), a:baseIdx[i], b:topIdx[i]});
+  if(!apex) for(let i=0;i<m;i++){const j=(i+1)%m;edges.push({name:'顶边 '+(i+1), a:topIdx[i], b:topIdx[j]});}
+  for(const e of edges){
+    e.pa=verts[e.a]; e.pb=verts[e.b]; e.len=distv(e.pa,e.pb);
+    e.mid=lerpv(e.pa,e.pb,0.5);
+  }
+  let maxR=0; verts.forEach(v=>{maxR=Math.max(maxR,Math.hypot(v[0],v[2]));});
+  // 光滑曲面：给顶点配「平滑法线」，避免按面片着色出现一条条的棱
+  const vnorm=verts.map(()=>null);
+  const smoothRings=[];
+  if(S.baseType==='circle'){
+    const tilt=S.R*(1-S.topK)/Math.max(S.h,1e-6);      // 侧面法线的竖直分量（柱=0，锥向上）
+    for(let i=0;i<verts.length;i++){
+      const v=verts[i];
+      const nx=v[0]-(v[1]>0?S.offX:0), nz=v[2]-(v[1]>0?S.offZ:0);
+      const L=Math.hypot(nx,nz);
+      vnorm[i]=L>1e-9?normv([nx/L,tilt,nz/L]):[0,1,0];
+    }
+    for(const i of baseIdx) vnorm[i]=[0,-1,0];
+    if(topIdx.length) for(const i of topIdx) vnorm[i]=[0,1,0];
+    for(const f of faces) if(f.type==='side') f.smooth=true;
+    smoothRings.push(baseIdx.slice());
+    if(!apex&&topIdx.length&&topIdx[0]!==topIdx[1]) smoothRings.push(topIdx.slice());
+  }
+  // 边 → 相邻面（用于光滑体的轮廓线判定）
+  const baseSet=new Set(baseIdx), topSet=new Set(topIdx);
+  const edgeFaces=new Map();
+  faces.forEach((f,fi)=>{
+    const n=f.idx.length;
+    for(let a=0;a<n;a++){
+      const p=f.idx[a], q=f.idx[(a+1)%n];
+      const k=Math.min(p,q)+'_'+Math.max(p,q);
+      if(!edgeFaces.has(k)) edgeFaces.set(k,[]);
+      const arr=edgeFaces.get(k); if(arr.indexOf(fi)<0) arr.push(fi);
+    }
+  });
+  const M={verts,faces,edges,baseIdx,topIdx,apex,m:ring.length,center,
+           y0,y1,maxR,baseSet,topSet,edgeFaces,vnorm,smoothRings,
+           diag:Math.max(1e-6,Math.hypot(2*maxR,h))};
+  return M;
+}
+function refreshModel(){
+  S.model=buildModel(); buildEdgeSelect(); updateHud(); refreshPSLabels(); updateVoxStat(); invalidate();
+  renderQuickSec();
+}
+
+/* =========================================================
+   2.3 正方体涂鸦：六面纹理与展开图
+   ========================================================= */
+const CUBE_NORM=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+const CUBE_NAME=['右','左','上','下','前','后'];
+const CUBE_H=1.15;                                   // 半边长
+const CFACES=CUBE_NORM.map((n,i)=>{
+  let v=Math.abs(n[1])<0.9?[0,1,0]:[1,0,0];
+  const u=normv(crossv(v,n)); v=normv(subv(v,mulv(n,dotv(v,n))));
+  const c=q=>addv(addv(mulv(n,CUBE_H),mulv(u,q[0]*CUBE_H)),mulv(v,q[1]*CUBE_H));
+  return {id:i,name:CUBE_NAME[i],n,u,v,corners:[c([-1,1]),c([1,1]),c([1,-1]),c([-1,-1])]};
+});                                                  // 角点 ↔ 纹理 (0,0)(1,0)(1,1)(0,1)
+const CEDGES=[];                                     // 立方体的 12 条棱（面-面相邻）
+for(let i=0;i<6;i++)for(let j=i+1;j<6;j++){
+  const sh=[];
+  for(const a of CFACES[i].corners) for(const b of CFACES[j].corners)
+    if(distv(a,b)<1e-9&&!sh.some(q=>distv(q,a)<1e-9)) sh.push(a);
+  if(sh.length===2) CEDGES.push({a:i,b:j,p0:sh[0],p1:sh[1]});
+}
+function rotAxis(p,o,d,t){                           // 绕轴（过 o，单位方向 d）旋转
+  const v=subv(p,o), c=Math.cos(t), sn=Math.sin(t), cr=crossv(d,v);
+  return addv(o,addv(addv(mulv(v,c),mulv(cr,sn)),mulv(d,dotv(d,v)*(1-c))));
+}
+const NET_ROOT=4;                                    // 以「前面」为展开基准面
+function netUnfold(tree){                            // 生成树 → 展开变换链
+  const parent={}, info={}, adjT={};
+  parent[NET_ROOT]=-1;
+  tree.forEach(ei=>{
+    const e=CEDGES[ei];
+    (adjT[e.a]=adjT[e.a]||[]).push({to:e.b,e});
+    (adjT[e.b]=adjT[e.b]||[]).push({to:e.a,e});
+  });
+  const order=[NET_ROOT], q=[NET_ROOT];
+  while(q.length){
+    const cur=q.shift();
+    for(const lk of (adjT[cur]||[])){
+      if(parent[lk.to]!==undefined) continue;
+      parent[lk.to]=cur; order.push(lk.to); q.push(lk.to);
+      const ax=normv(subv(lk.e.p1,lk.e.p0));
+      const nc=CFACES[lk.to].n, np=CFACES[cur].n;
+      const sinT=dotv(np,crossv(ax,nc));             // θ = ±90°，唯一确定
+      info[lk.to]={parent:cur,o:lk.e.p0.slice(),ax,theta:sinT>0?Math.PI/2:-Math.PI/2};
+    }
+  }
+  if(order.length!==6) return null;
+  const chainOf=fid=>{const c=[];let x=fid;while(x!==NET_ROOT){c.unshift(x);x=parent[x];}return c;};
+  const cornerOf=(fid,ci,t)=>{
+    let p=CFACES[fid].corners[ci].slice();
+    const ch=chainOf(fid);
+    for(const f of ch.slice().reverse()){
+      const inf=info[f];
+      p=rotAxis(p,inf.o,inf.ax,inf.theta*t);
+    }
+    return p;
+  };
+  return {parent,info,cornerOf};
+}
+function netCells(u){                                // 展开态各面的网格坐标
+  const R=CFACES[NET_ROOT], out=[];
+  for(let f=0;f<6;f++){
+    const cs=[0,1,2,3].map(i=>u.cornerOf(f,i,1));
+    const ctr=mulv(cs.reduce((a,b)=>addv(a,b),[0,0,0]),0.25);
+    const rel=subv(ctr,mulv(R.n,CUBE_H));
+    out.push({f,c:[Math.round(dotv(rel,R.u)/(2*CUBE_H)),Math.round(dotv(rel,R.v)/(2*CUBE_H))]});
+  }
+  return out;
+}
+function canonCells(cells){                          // 规范化（8 种对称）后取字典序最小
+  let mn=[1e9,1e9],mx=[-1e9,-1e9];
+  cells.forEach(c=>{mn[0]=Math.min(mn[0],c.c[0]);mn[1]=Math.min(mn[1],c.c[1]);
+                    mx[0]=Math.max(mx[0],c.c[0]);mx[1]=Math.max(mx[1],c.c[1]);});
+  const base=cells.map(c=>[c.c[0]-mn[0],c.c[1]-mn[1]]);
+  const sz=[mx[0]-mn[0]+1,mx[1]-mn[1]+1];
+  let best=null;
+  for(let m=0;m<2;m++)for(let r=0;r<4;r++){
+    let g=base.map(([x,y])=>{let a=m?(sz[0]-1-x):x;for(let k=0;k<r;k++){const t=-y;y=a;a=t;}return[a,y];});
+    const mnx=Math.min(...g.map(p=>p[0])), mny=Math.min(...g.map(p=>p[1]));
+    g=g.map(p=>[p[0]-mnx,p[1]-mny]).sort((A,B)=>A[1]-B[1]||A[0]-B[0]);
+    const key=g.map(p=>p.join(',')).join(';');
+    if(!best||key<best.key) best={key,g};
+  }
+  return best;
+}
+function netLabel(g){                                // 标准分类名：取行数最少的方向
+  let best=null;
+  for(let m=0;m<2;m++)for(let r=0;r<4;r++){
+    let gg=g.map(([x,y])=>{let a=m?x:-x;for(let k=0;k<r;k++){const t=-y;y=a;a=t;}return[a,y];});
+    const mnx=Math.min(...gg.map(p=>p[0])), mny=Math.min(...gg.map(p=>p[1]));
+    gg=gg.map(p=>[p[0]-mnx,p[1]-mny]);
+    const rows={}; gg.forEach(([x,y])=>{rows[y]=(rows[y]||0)+1;});
+    const lab=Object.keys(rows).map(Number).sort((a,b)=>b-a).map(y=>rows[y]).join('-');
+    const cnt=Object.keys(rows).length;
+    if(!best||cnt<best.cnt||(cnt===best.cnt&&lab<best.lab)) best={lab,cnt};
+  }
+  return best.lab+' 型';
+}
+function buildNets(){                                // 枚举全部生成树 → 11 种展开图
+  const combos=[];
+  (function gen(st,cur){
+    if(cur.length===5){combos.push(cur.slice());return;}
+    for(let i=st;i<12;i++){cur.push(i);gen(i+1,cur);cur.pop();}
+  })(0,[]);
+  const map=new Map();
+  for(const tree of combos){
+    const P=[...Array(6).keys()];
+    const find=x=>P[x]===x?x:(P[x]=find(P[x]));
+    let ok=true;
+    for(const ei of tree){
+      const e=CEDGES[ei], ra=find(e.a), rb=find(e.b);
+      if(ra===rb){ok=false;break;}
+      P[ra]=rb;
+    }
+    if(!ok) continue;
+    const rs=new Set(); for(let i=0;i<6;i++) rs.add(find(i));
+    if(rs.size!==1) continue;
+    const u=netUnfold(tree); if(!u) continue;
+    const cells=netCells(u);
+    let dup=false;
+    for(let i=0;i<6;i++)for(let j=i+1;j<6;j++)
+      if(cells[i].c[0]===cells[j].c[0]&&cells[i].c[1]===cells[j].c[1]) dup=true;
+    if(dup) continue;
+    const can=canonCells(cells);
+    if(!map.has(can.key)) map.set(can.key,{tree:tree.slice(),cells,g:can.g,label:netLabel(can.g)});
+  }
+  return [...map.values()];
+}
+const NETS=buildNets();
+
+/* 六面纹理：矢量笔画 + 离屏画布 */
+const TEX_SIZE=512;
+const CUBE_TEX=[], CUBE_STROKES=[];
+for(let i=0;i<6;i++){
+  const c=document.createElement('canvas'); c.width=c.height=TEX_SIZE;
+  CUBE_TEX.push(c); CUBE_STROKES.push([]);
+}
+function redrawFace(fid){
+  const x=CUBE_TEX[fid].getContext('2d');
+  x.clearRect(0,0,TEX_SIZE,TEX_SIZE);
+  x.lineCap='round'; x.lineJoin='round';
+  for(const st of CUBE_STROKES[fid]){
+    x.globalCompositeOperation=st.erase?'destination-out':'source-over';
+    x.strokeStyle=st.color; x.lineWidth=st.w;
+    if(st.pts.length===1){
+      x.beginPath(); x.arc(st.pts[0][0],st.pts[0][1],st.w/2,0,7); x.fillStyle=st.color; x.fill();
+    }else{
+      x.beginPath(); x.moveTo(st.pts[0][0],st.pts[0][1]);
+      for(let i=1;i<st.pts.length;i++) x.lineTo(st.pts[i][0],st.pts[i][1]);
+      x.stroke();
+    }
+  }
+  x.globalCompositeOperation='source-over';
+}
+function strokeTo(st,fid){                           // 增量绘制（只画新增的一段）
+  const x=CUBE_TEX[fid].getContext('2d');
+  x.lineCap='round'; x.lineJoin='round';
+  x.globalCompositeOperation=st.erase?'destination-out':'source-over';
+  x.strokeStyle=st.color; x.lineWidth=st.w;
+  const p=st.pts;
+  if(p.length===1){ x.beginPath(); x.arc(p[0][0],p[0][1],st.w/2,0,7); x.fillStyle=st.color; x.fill(); return; }
+  x.beginPath(); x.moveTo(p[p.length-2][0],p[p.length-2][1]); x.lineTo(p[p.length-1][0],p[p.length-1][1]); x.stroke();
+  x.globalCompositeOperation='source-over';
+}
+
+/* 展开/合拢：整体系变换（含「摆正」视角旋转） */
+function cubeTransform(t){
+  const R=CFACES[NET_ROOT];
+  let ax=crossv(R.n,[0,0,1]), ang=Math.acos(clamp(dotv(R.n,[0,0,1]),-1,1));
+  if(Math.hypot(...ax)<1e-8){ ax=[0,1,0]; ang=dotv(R.n,[0,0,1])>0?0:Math.PI; }
+  ax=normv(ax);
+  const rot=S.cube.netRot||0;                        // 让最长的一行水平摆放
+  const off=mulv(S.cube.netCenter||[0,0,0],t);       // 展开后整体居中
+  return p=>subv(rotAxis(rotAxis(p,[0,0,0],ax,ang*t),[0,0,0],[0,0,1],rot*t),off);
+}
+function computeNetCenter(){
+  const u=S.cube.netU, rot=S.cube.netRot||0;
+  let mn=[1e9,1e9,1e9], mx=[-1e9,-1e9,-1e9];
+  for(let f=0;f<6;f++)for(let i=0;i<4;i++){
+    const p=rotAxis(u.cornerOf(f,i,1),[0,0,0],[0,0,1],rot);
+    for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],p[k]);mx[k]=Math.max(mx[k],p[k]);}
+  }
+  return [(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
+}
+function netRotationOf(cells){                       // 竖长则整体转 90°，让最长方向水平
+  let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+  cells.forEach(c=>{mnx=Math.min(mnx,c.c[0]);mxx=Math.max(mxx,c.c[0]);
+                    mny=Math.min(mny,c.c[1]);mxy=Math.max(mxy,c.c[1]);});
+  return (mxy-mny)>(mxx-mnx)?Math.PI/2:0;
+}
+function camForFold(t){                              // 展开度 → 相机（拉远并正对）
+  return {theta:1.02+(Math.PI/2-1.02)*t, phi:0.30+(0.12-0.30)*t, dist:7.6+10.2*t};
+}
+function applyFoldCam(t){
+  const c=camForFold(t);
+  cam.theta=c.theta; cam.phi=c.phi; cam.dist=c.dist;
+}
+function cubeFaceCorners(fid,t){
+  const u=S.cube.netU;
+  const raw=[0,1,2,3].map(i=>u.cornerOf(fid,i,t));
+  const view=cubeTransform(t);
+  return raw.map(view);
+}
+/* 贴图朝向：算出「该面的哪一个角点，在展开图上位于屏幕左上/右上/右下/左下」
+   —— 把贴图四角按这个顺序送进 drawTexQuad，展开图上每一面就都是正着看的。 */
+function computeTexOrder(){
+  const ord=[];
+  for(let f=0;f<6;f++){
+    const cs=cubeFaceCorners(f,1);            // 展开到位（t=1）时的四个角点
+    let cx=0,cy=0; cs.forEach(p=>{cx+=p[0]/4;cy+=p[1]/4;});
+    let TL=0,TR=0,BR=0,BL=0;
+    cs.forEach((p,i)=>{
+      const dx=p[0]-cx, dy=p[1]-cy;           // 世界 +y = 屏幕上方
+      if(dx<0&&dy>0) TL=i; else if(dx>0&&dy>0) TR=i;
+      else if(dx>0&&dy<0) BR=i; else BL=i;
+    });
+    ord.push([TL,TR,BR,BL]);
+  }
+  S.cube.texOrder=ord;
+}
+function buildCube(){
+  const t=S.cube.t, verts=[], faces=[];
+  for(let f=0;f<6;f++){
+    const cs=cubeFaceCorners(f,t);
+    const idx=cs.map(p=>{verts.push(p);return verts.length-1;});
+    // 角点绕序从外侧看为顺时针，故取反得到外法向（供光照与背面剔除）
+    const n=mulv(polyNormal(cs),-1);
+    faces.push({idx,type:'cube',cubeFace:f,n,c:avgPts(cs)});
+  }
+  return {verts,faces,edges:[],cube:true,m:0,apex:false,center:[0,0,0],
+          y0:-CUBE_H*1.02,y1:CUBE_H*1.02,maxR:CUBE_H*3,diag:CUBE_H*6,
+          baseSet:new Set(),topSet:new Set(),edgeFaces:new Map()};
+}
+
+/* =========================================================
+   3. 相机与投影
+   ========================================================= */
+const cv=document.getElementById('scene'), ctx=cv.getContext('2d');
+let CW=0, CH=0, DPR=1;
+function resize(){
+  const r=cv.getBoundingClientRect();
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  CW=Math.max(10,r.width); CH=Math.max(10,r.height);
+  cv.width=Math.round(CW*DPR); cv.height=Math.round(CH*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  invalidate();
+}
+new ResizeObserver(resize).observe(cv.parentElement);
+
+function basis(){
+  const ce=Math.cos(cam.phi), se=Math.sin(cam.phi);
+  const eye=[cam.target[0]+cam.dist*ce*Math.cos(cam.theta),
+             cam.target[1]+cam.dist*se,
+             cam.target[2]+cam.dist*ce*Math.sin(cam.theta)];
+  const fwd=normv(subv(cam.target,eye));
+  let right=crossv(fwd,[0,1,0]);
+  if(Math.hypot(right[0],right[1],right[2])<1e-6) right=[1,0,0];
+  right=normv(right);
+  const up=crossv(right,fwd);
+  return {eye,fwd,right,up};
+}
+function focal(){return (CH/2)/Math.tan(cam.fov*Math.PI/360);}
+function project(p,B){
+  const rel=subv(p,B.eye);
+  const z=dotv(rel,B.fwd), x=dotv(rel,B.right), y=dotv(rel,B.up);
+  const zz=Math.max(z,0.02), s=focal()/zz;
+  return {x:CW/2+x*s, y:CH/2-y*s, z, s};
+}
+function screenRay(sx,sy,B){
+  const f=focal();
+  const dx=(sx-CW/2)/f, dy=-(sy-CH/2)/f;
+  const d=normv(addv(addv(mulv(B.right,dx),mulv(B.up,dy)),B.fwd));
+  return {o:B.eye, d};
+}
+
+/* =========================================================
+   4. 渲染
+   ========================================================= */
+const LIGHT=normv([0.45,0.85,0.55]);
+const Z_SEC=-1e8, Z_DIM=-1.2e8, Z_GIZMO=-1.6e8, Z_VOID=-1.9e8, Z_PICK=-2e8;  // 固定层级
+let dirty=true;
+function invalidate(){dirty=true;}
+function nowMs(){return (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();}
+function shadeRGB(rgb,n,base,amp){
+  const s=(base===undefined?0.56:base)+(amp===undefined?0.44:amp)*Math.abs(dotv(n,LIGHT));
+  return 'rgb('+rgb.map(c=>Math.round(clamp(c*s,0,255))).join(',')+')';
+}
+const COL_SIDE=[86,196,236], COL_BASE=[148,158,248], COL_TOP=[178,156,250];
+
+function drawGrid(B){
+  const ext=Math.ceil(Math.max(4,S.model.maxR+2));
+  const y=S.model.y0;
+  ctx.lineWidth=1;
+  for(let i=-ext;i<=ext;i++){
+    const a=project([i,y,-ext],B), b=project([i,y,ext],B);
+    const c=project([-ext,y,i],B), d=project([ext,y,i],B);
+    ctx.strokeStyle=(i===0)?'rgba(100,116,139,.55)':'rgba(148,163,184,.22)';
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(d.x,d.y);ctx.stroke();
+  }
+  // 坐标轴
+  const ax=[[1.6,0,0],[0,1.6,0],[0,0,1.6]], lb=['X','Y','Z'], cl=['#e11d48','#16a34a','#2563eb'];
+  for(let i=0;i<3;i++){
+    const o=project([0,S.model.y0,0],B), p=project([ax[i][0],S.model.y0+ax[i][1],ax[i][2]],B);
+    ctx.strokeStyle=cl[i];ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+    ctx.fillStyle=cl[i];ctx.font='600 11px sans-serif';
+    ctx.fillText(lb[i],p.x+4,p.y+4);
+  }
+}
+function draw(){
+  if(!S.model) return;
+  const B=basis();
+  ctx.clearRect(0,0,CW,CH);
+  if(S.opGrid) drawGrid(B);
+
+  const items=[];
+  const M=S.model;
+  // --- 面：只填充（避免三角化对角线被描出来）---
+  if(M.cube){                                    // 正方体涂鸦：整面贴图，避免三角化割裂纹理
+    for(const f of M.faces){
+      const pr=f.idx.map(i=>project(M.verts[i],B));
+      const depth=pr.reduce((t,p)=>t+p.z,0)/4;
+      const fid=f.cubeFace;
+      const has=CUBE_STROKES[fid].length>0;
+      items.push({z:depth, fn:()=>{
+        const ord=(S.cube.flat&&S.cube.texOrder)?S.cube.texOrder[fid]:[0,1,2,3];
+        const P=ord.map(i=>[pr[i].x,pr[i].y]);
+        const fp=new Path2D();                    // 用 Path2D 保存轮廓：贴图会重置当前路径
+        fp.moveTo(P[0][0],P[0][1]);
+        for(let i=1;i<4;i++) fp.lineTo(P[i][0],P[i][1]);
+        fp.closePath();
+        ctx.fillStyle=shadeRGB([255,255,255],f.n,M.cube?0.82:0.56,M.cube?0.18:0.44);
+        ctx.globalAlpha=1;ctx.fill(fp);ctx.globalAlpha=1;
+        if(has) drawTexQuad(CUBE_TEX[fid],P);
+        ctx.strokeStyle='rgba(30,41,59,.55)';ctx.lineWidth=1.4;ctx.stroke(fp);
+        if(!has){
+          ctx.fillStyle='rgba(100,116,139,.55)';ctx.font='600 12px sans-serif';
+          ctx.textAlign='center';ctx.textBaseline='middle';
+          const cc=[(P[0][0]+P[2][0])/2,(P[0][1]+P[2][1])/2];
+          ctx.fillText(CUBE_NAME[fid],cc[0],cc[1]);
+          ctx.textAlign='left';ctx.textBaseline='alphabetic';
+        }
+      }});
+    }
+    if(S.opVerts){}
+  }else if(S.opFaces){
+    for(const f of M.faces){
+      const pts=f.idx.map(i=>M.verts[i]);
+      let rgb=(f.type==='vox')?VOX_PAINT[f.col%VOX_PAINT.length]
+               :(f.type==='base'?COL_BASE:(f.type==='top'?COL_TOP:COL_SIDE));
+      if(f.inner) rgb=rgb.map(t=>Math.round(t*0.5));   // 内壁压暗：挖掉的地方一眼看得出凹进去
+      const sm=!!(f.smooth&&M.vnorm);                   // 光滑曲面：用顶点法线做渐变，消除条带
+      for(let i=1;i<pts.length-1;i++){
+        const ti=[f.idx[0],f.idx[i],f.idx[i+1]];
+        const tri=ti.map(k=>M.verts[k]);
+        const pr=tri.map(p=>project(p,B));
+        const depth=(pr[0].z+pr[1].z+pr[2].z)/3;
+        let grad=null, strokeCol=shadeRGB(rgb,f.n);
+        if(sm){
+          let a=ti[0], b=ti[0], la=1e9, lb=-1e9;
+          const vn=ti.map(k=>M.vnorm[k]||f.n);
+          vn.forEach((nv,k)=>{
+            const l=Math.abs(dotv(nv,LIGHT));
+            if(l<la){la=l;a=k;} if(l>lb){lb=l;b=k;}
+          });
+          strokeCol=shadeRGB(rgb,normv(addv(addv(vn[0],vn[1]),vn[2])));
+          const pa=project(M.verts[ti[a]],B), pb=project(M.verts[ti[b]],B);
+          if(Math.hypot(pa.x-pb.x,pa.y-pb.y)>0.6){
+            grad=ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+            grad.addColorStop(0,shadeRGB(rgb,vn[a]));
+            grad.addColorStop(1,shadeRGB(rgb,vn[b]));
+          }else strokeCol=shadeRGB(rgb,vn[a]);
+        }
+        const gcol=grad, scol=strokeCol;
+        items.push({z:depth, fn:()=>{
+          ctx.beginPath();ctx.moveTo(pr[0].x,pr[0].y);ctx.lineTo(pr[1].x,pr[1].y);ctx.lineTo(pr[2].x,pr[2].y);ctx.closePath();
+          ctx.globalAlpha=S.opacity;ctx.fillStyle=gcol||scol;ctx.fill();
+          ctx.globalAlpha=S.opacity;                    // 同色描边消除相邻面接缝
+          ctx.strokeStyle=scol;ctx.lineWidth=1;ctx.stroke();
+          ctx.globalAlpha=1;
+        }});
+      }
+    }
+  }
+  // --- 棱线：光滑曲面只画轮廓线 ---
+  if(S.opEdges) collectEdges(items,B);
+  // --- 顶点标记 ---
+  if(S.opVerts&&!M.cube){
+    const seen=new Set();
+    S.model.faces.forEach(f=>f.idx.forEach(i=>{
+      if(seen.has(i))return; seen.add(i);
+      const p=project(S.model.verts[i],B);
+      items.push({z:p.z, fn:()=>{ctx.fillStyle='#0f172a';ctx.beginPath();ctx.arc(p.x,p.y,2.6,0,7);ctx.fill();}});
+    }));
+  }
+  // --- 阵列画笔：当前指向的小方块（含被挖空的空位）描边提示 ---
+  if(S.mode==='voxel'&&S.vox.hover&&S.vox.brush!=='view') drawVoxCursor(items,B);
+  if(S.mode==='voxel'&&S.opVoid) drawVoidHints(items,B);   // 挖空的格子：淡虚框标出来
+  if(S.mode==='voxel'&&S.vox.aim) drawAimGhosts(items,B); // 瞄准：目标夹在哪两块之间
+  if(S.mode==='voxel') drawFillFlash(items,B);             // 填回成功的脉冲反馈
+  // --- 截面 ---
+  if(S.section){
+    const poly=S.section.poly||null, pl=S.section.plane;
+    // 平面示意（挖空后可能没有闭合轮廓，用平面原点当中心）
+    const ctr=poly?avgPts(poly):pl.origin.slice(), arm=S.model.maxR*0.78;
+    const quad=[[-arm,-arm],[arm,-arm],[arm,arm],[-arm,arm]].map(([a,b])=>
+      addv(ctr,addv(mulv(pl.u,a),mulv(pl.v,b))));
+    const qp=quad.map(p=>project(p,B));
+    items.push({z:Z_SEC, fn:()=>{
+      ctx.beginPath();ctx.moveTo(qp[0].x,qp[0].y);for(let i=1;i<4;i++)ctx.lineTo(qp[i].x,qp[i].y);ctx.closePath();
+      ctx.fillStyle='rgba(245,158,11,.055)';ctx.fill();
+      ctx.strokeStyle='rgba(217,119,6,.28)';ctx.setLineDash([5,4]);ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);
+    }});
+    // 截面：外环 + 内部洞，整体填充 + 45° 剖面纹理 + 醒目边框（固定最上层）
+    const secLoops=(S.section.loops&&S.section.loops.length)?S.section.loops:(poly?[poly]:[]);
+    const cells=voxSectionCells();
+    if(cells&&cells.length){
+      // 阵列模式：先铺一层整体底（evenodd 挖出洞），再逐块覆盖「小格子」
+      if(secLoops.length){
+        const prs=secLoops.map(lp=>lp.map(p=>project(p,B)));
+        items.push({z:Z_SEC-2, fn:()=>drawSectionOutline(prs)});
+      }
+      cells.forEach(c=>{
+        const cc=voxAt(c.i,c.j,c.k);
+        const rgb=VOX_PAINT[((cc&&cc.c)||0)%VOX_PAINT.length];
+        const pr=c.poly.map(p=>project(p,B));
+        items.push({z:Z_SEC-1, fn:()=>drawVoxSectionCell(pr,rgb)});
+      });
+    }else{
+      secLoops.forEach((lp,li)=>{
+        const pr=lp.map(p=>project(p,B));
+        items.push({z:Z_SEC-1-li*0.001, fn:()=>drawSectionFace(pr,li===0)});
+      });
+    }
+  }
+  // --- 已取点 ---
+  S.picks.forEach((pk,i)=>{
+    const p=project([pk.x,pk.y,pk.z],B);
+    items.push({z:Z_PICK, fn:()=>{
+      const hot=(S.hoverPt===pk.id);
+      ctx.beginPath();ctx.arc(p.x,p.y,hot?9:7.5,0,7);
+      ctx.fillStyle=hot?'#f43f5e':'#e11d48';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(String(i+1),p.x,p.y+0.5);ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    }});
+  });
+  // --- 拖拽手柄 ---
+  if(S.opGizmo){
+    const gz=gizmos();
+    gz.forEach(g=>{
+      const p=project(g.p,B);
+      items.push({z:Z_GIZMO, fn:()=>{
+        ctx.beginPath();ctx.arc(p.x,p.y,8,0,7);
+        ctx.fillStyle=g.hot?'#ffffff':g.c;ctx.fill();
+        ctx.strokeStyle=g.c;ctx.lineWidth=2.5;ctx.stroke();
+        ctx.fillStyle=g.hot?g.c:'#fff';ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(g.t,p.x,p.y+0.5);ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      }});
+    });
+  }
+  // --- 尺寸标注 ---
+  if(S.opDim&&!M.cube){
+    const M=S.model;
+    items.push({z:Z_DIM, fn:()=>{
+      if(M.vox){                     // 阵列：标出大立方体边长 a
+        const half=voxSize()/2;
+        const o=project([-half,M.y0,-half],B), c=project([half,M.y0,half],B);
+        ctx.strokeStyle='rgba(13,148,136,.85)';ctx.lineWidth=1.4;ctx.setLineDash([4,3]);
+        ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(c.x,c.y);ctx.stroke();ctx.setLineDash([]);
+        label('a='+fmt(voxSize(),2),'#0d9488',(o.x+c.x)/2,(o.y+c.y)/2-7);
+        const p0=project([half,M.y0,half],B), p1=project([half,M.y1,half],B);
+        ctx.strokeStyle='rgba(79,70,229,.85)';ctx.setLineDash([4,3]);
+        ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.stroke();ctx.setLineDash([]);
+        arrow(p0,p1,'#4f46e5');arrow(p1,p0,'#4f46e5');
+        label('a='+fmt(voxSize(),2),'#4338ca',(p0.x+p1.x)/2+8,(p0.y+p1.y)/2);
+        return;
+      }
+      if(M.sph){                     // 球 / 椭球：标出半径或三半轴
+        const ctr=project([0,0,0],B);
+        const axes=[[M.ra,0,0,'#0d9488','a'],[0,M.rb,0,'#16a34a','b'],[0,0,M.rc,'#4f46e5','c']];
+        if(M.ra===M.rb&&M.rb===M.rc){
+          const p=project([M.ra,0,0],B);
+          ctx.strokeStyle='rgba(13,148,136,.85)';ctx.setLineDash([4,3]);
+          ctx.beginPath();ctx.moveTo(ctr.x,ctr.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.setLineDash([]);
+          label('R='+fmt(M.ra,2),'#0d9488',(ctr.x+p.x)/2,(ctr.y+p.y)/2-7);
+        }else for(const [ax,ay,az,col,nm] of axes){
+          const p=project([ax,ay,az],B);
+          ctx.strokeStyle=col;ctx.setLineDash([4,3]);
+          ctx.beginPath();ctx.moveTo(ctr.x,ctr.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.setLineDash([]);
+          arrow(p,ctr,col);
+          label(nm+'='+fmt(Math.hypot(ax,ay,az),2),col,(ctr.x+p.x)/2,(ctr.y+p.y)/2-7);
+        }
+        return;
+      }
+      if(M.reg){                     // 正多面体：外接球半径
+        const p=project([S.gR,0,0],B), ctr=project([0,0,0],B);
+        ctx.strokeStyle='rgba(13,148,136,.85)';ctx.setLineDash([4,3]);
+        ctx.beginPath();ctx.moveTo(ctr.x,ctr.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.setLineDash([]);
+        label('R='+fmt(S.gR,2),'#0d9488',(ctr.x+p.x)/2,(ctr.y+p.y)/2-7);
+        return;
+      }
+      if(!M.baseIdx||!M.baseIdx.length) return;
+      const o=project([0,M.y0,0],B), v0=project(M.verts[M.baseIdx[0]],B);
+      ctx.strokeStyle='rgba(13,148,136,.85)';ctx.lineWidth=1.4;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(v0.x,v0.y);ctx.stroke();ctx.setLineDash([]);
+      label(fmt(S.R,2),'#0d9488',(o.x+v0.x)/2,(o.y+v0.y)/2-6);
+      const xo=M.maxR*0.62;
+      const a=project([xo,M.y0,0],B), b=project([xo,M.y1,0],B);
+      ctx.strokeStyle='rgba(79,70,229,.85)';ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+      arrow(a,b,'#4f46e5');arrow(b,a,'#4f46e5');
+      label('h='+fmt(S.h,2),'#4338ca',(a.x+b.x)/2+8,(a.y+b.y)/2);
+    }});
+  }
+  items.sort((a,b)=>b.z-a.z);
+  for(const it of items) it.fn();
+  if(S.mode==='cube'&&S.cube.edit>=0) drawEditOverlay();
+  updateHud();
+}
+function voxCellFrame(B,i,j,k){
+  const n=S.vox.n, cell=S.vox.cell, half=n*cell/2;
+  const gap=Math.min(S.vox.gap,cell*0.45), hs=(cell-gap)/2;
+  const cx=(i+0.5)*cell-half, cy=(j+0.5)*cell-half, cz=(k+0.5)*cell-half;
+  const C=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+  return C.map(p=>project([cx+p[0]*hs,cy+p[1]*hs,cz+p[2]*hs],B));
+}
+const VOX_FQ=[[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]];
+function drawAimGhosts(items,B){                 // 瞄准：把「目标 / 前面的实心块 / 后面的实心块」三样画清楚
+  const a=S.vox.aim; if(!a) return;
+  const n=S.vox.n, cell=S.vox.cell;
+  const box=(i,j,k)=>{
+    const Q=voxCellFrame(B,i,j,k);
+    const c=Q.reduce((s2,p)=>({x:s2.x+p.x/8,y:s2.y+p.y/8}),{x:0,y:0});
+    return {Q,c};
+  };
+  const FQ=VOX_FQ, EG2=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const drawBox=(Q,col,dash,wid)=>{
+    items.push({z:Z_VOID-0.3, fn:()=>{
+      ctx.save();
+      ctx.beginPath();
+      FQ.forEach(q=>{ctx.moveTo(Q[q[0]].x,Q[q[0]].y);
+        for(let t=1;t<4;t++)ctx.lineTo(Q[q[t]].x,Q[q[t]].y);ctx.closePath();});
+      ctx.fillStyle=col.fill;ctx.fill();
+      ctx.strokeStyle=col.line;ctx.lineWidth=wid||1.4;ctx.setLineDash(dash||[]);
+      EG2.forEach(e=>{ctx.beginPath();ctx.moveTo(Q[e[0]].x,Q[e[0]].y);ctx.lineTo(Q[e[1]].x,Q[e[1]].y);ctx.stroke();});
+      ctx.setLineDash([]);ctx.restore();
+    }});
+  };
+  const badge=(p,txt,bg)=>{
+    items.push({z:Z_VOID-0.25, fn:()=>{
+      ctx.save();
+      ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      const w=ctx.measureText(txt).width+10;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(p.x-w/2,p.y-8,w,16,8); else ctx.rect(p.x-w/2,p.y-8,w,16);
+      ctx.fillStyle=bg;ctx.fill();
+      ctx.fillStyle='#fff';ctx.fillText(txt,p.x,p.y);
+      ctx.restore();
+    }});
+  };
+  if(a.front){ const f=box(a.front.i,a.front.j,a.front.k);
+    drawBox(f.Q,{fill:'rgba(251,146,60,.16)',line:'rgba(234,88,12,.9)'},[5,3],1.6);
+    badge(f.c,'前','rgba(234,88,12,.95)'); }
+  if(a.back){ const b2=box(a.back.i,a.back.j,a.back.k);
+    drawBox(b2.Q,{fill:'rgba(96,165,250,.16)',line:'rgba(37,99,235,.9)'},[5,3],1.6);
+    badge(b2.c,'后','rgba(37,99,235,.95)'); }
+  // 前 → 目标 → 后的连线：一眼看出目标夹在哪两块之间
+  const C=a.raw[a.idx];
+  if(C&&(a.front||a.back)){
+    const pc=box(C.i,C.j,C.k).c;
+    const pf=a.front?box(a.front.i,a.front.j,a.front.k).c:null;
+    const pb=a.back?box(a.back.i,a.back.j,a.back.k).c:null;
+    items.push({z:Z_VOID-0.28, fn:()=>{
+      ctx.save();
+      ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+      ctx.beginPath();
+      if(pf){ctx.moveTo(pf.x,pf.y);ctx.lineTo(pc.x,pc.y);}
+      if(pb){ctx.moveTo(pc.x,pc.y);ctx.lineTo(pb.x,pb.y);}
+      ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    }});
+    badge(pc,'目标','rgba(13,148,136,.96)');
+  }
+}
+function drawFillFlash(items,B){                 // 填回成功后的脉冲圈：内部的块看不见，靠这个给反馈
+  const f=S.vox.flash; if(!f) return;
+  const age=(nowMs()-f.t)/820;
+  if(age<0||age>1) return;
+  const Q=voxCellFrame(B,f.i,f.j,f.k);
+  const ct=Q.reduce((a,p)=>({x:a.x+p.x/8,y:a.y+p.y/8}),{x:0,y:0});
+  const e=age*age, r=5+e*30, al=1-age;
+  items.push({z:Z_PICK-1, fn:()=>{
+    ctx.save();
+    ctx.beginPath();
+    if(ctx.arc) ctx.arc(ct.x,ct.y,r,0,Math.PI*2); else ctx.rect(ct.x-r,ct.y-r,r*2,r*2);
+    ctx.strokeStyle='rgba(16,185,129,'+(0.85*al).toFixed(3)+')';ctx.lineWidth=2.6;ctx.stroke();
+    ctx.beginPath();
+    if(ctx.arc) ctx.arc(ct.x,ct.y,3.4,0,Math.PI*2); else ctx.rect(ct.x-3.4,ct.y-3.4,6.8,6.8);
+    ctx.fillStyle='rgba(5,150,105,'+(0.9*al).toFixed(3)+')';ctx.fill();
+    ctx.restore();
+  }});
+}
+function drawVoxCursor(items,B){                   // 画笔光标：指出将要被涂 / 挖 / 填回的那一格
+  const v=S.vox.hover, n=S.vox.n, cell=S.vox.cell;
+  const gap=Math.min(S.vox.gap,cell*0.45), hs=(cell-gap)/2, half=n*cell/2;
+  const cx=(v.i+0.5)*cell-half, cy=(v.j+0.5)*cell-half, cz=(v.k+0.5)*cell-half;
+  const P=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]
+          .map(p=>[cx+p[0]*hs,cy+p[1]*hs,cz+p[2]*hs]);
+  const EG=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const col=S.vox.brush==='cut'?'#e11d48':(S.vox.brush==='fill'?'#0d9488':VOX_HEX[S.vox.cur]);
+  for(const e of EG){
+    const pa=project(P[e[0]],B), pb=project(P[e[1]],B);
+    items.push({z:(pa.z+pb.z)/2-0.004, fn:()=>{
+      ctx.save();
+      ctx.strokeStyle=col; ctx.lineWidth=2.2;
+      if(S.vox.brush==='fill') ctx.setLineDash([5,3]);
+      ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();
+      ctx.restore();
+    }});
+  }
+  // 填回模式：同一视线上的候选空位要能一眼分辨
+  //   ① 每个候选画自己的虚框（旧版这里错用了当前块的 P，所有虚影全叠在同一处，根本看不出层次）
+  //   ② 候选之间用细虚线串起来 → 看得出"从外到内一共穿过几层"
+  //   ③ 每个候选标序号，当前目标实心高亮
+  if(S.vox.brush==='fill'&&S.vox.fillList&&S.vox.fillList.length>1){
+    const list=S.vox.fillList, ctr=[];
+    for(const c of list){
+      const Q=voxCellFrame(B,c.i,c.j,c.k);
+      ctr.push(Q.reduce((a,p)=>({x:a.x+p.x/8,y:a.y+p.y/8}),{x:0,y:0}));
+    }
+    items.push({z:Z_VOID-0.45, fn:()=>{
+      ctx.save();
+      ctx.strokeStyle='rgba(13,148,136,.42)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+      ctx.beginPath();ctx.moveTo(ctr[0].x,ctr[0].y);
+      for(let t=1;t<ctr.length;t++)ctx.lineTo(ctr[t].x,ctr[t].y);
+      ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    }});
+    list.forEach((c,ci)=>{
+      if(ci===S.vox.fillIdx) return;
+      const Q=voxCellFrame(B,c.i,c.j,c.k);
+      items.push({z:Z_VOID-0.5, fn:()=>{
+        ctx.save();
+        ctx.beginPath();
+        VOX_FQ.forEach(q=>{ctx.moveTo(Q[q[0]].x,Q[q[0]].y);
+          for(let t=1;t<4;t++)ctx.lineTo(Q[q[t]].x,Q[q[t]].y);ctx.closePath();});
+        ctx.fillStyle='rgba(13,148,136,.05)';ctx.fill();
+        ctx.strokeStyle='rgba(13,148,136,.34)';ctx.lineWidth=1;ctx.setLineDash([2,4]);
+        EG.forEach(e=>{ctx.beginPath();ctx.moveTo(Q[e[0]].x,Q[e[0]].y);ctx.lineTo(Q[e[1]].x,Q[e[1]].y);ctx.stroke();});
+        ctx.setLineDash([]);
+        const ct=ctr[ci];
+        ctx.beginPath();
+        if(ctx.arc) ctx.arc(ct.x,ct.y,7.5,0,Math.PI*2); else ctx.rect(ct.x-7.5,ct.y-7.5,15,15);
+        ctx.fillStyle='rgba(255,255,255,.92)';ctx.fill();
+        ctx.strokeStyle='rgba(13,148,136,.55)';ctx.lineWidth=1;ctx.stroke();
+        ctx.fillStyle='#0f766e';ctx.font='700 9px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(String(ci+1),ct.x,ct.y+0.5);
+        ctx.restore();
+      }});
+    });
+  }
+  if(S.vox.brush==='fill'){
+    items.push({z:Z_VOID-0.6, fn:()=>{
+      ctx.save();ctx.beginPath();
+      VOX_FQ.forEach(q=>{ctx.moveTo(P[q[0]].x,P[q[0]].y);
+        for(let t=1;t<4;t++)ctx.lineTo(P[q[t]].x,P[q[t]].y);ctx.closePath();});
+      ctx.fillStyle='rgba(16,185,129,.26)';ctx.fill();
+      ctx.strokeStyle='#059669';ctx.lineWidth=1.8;ctx.stroke();
+      ctx.restore();
+    }});
+  }
+  // 填回模式：标出「第 k / N 层」+ 当前方向，一眼知道里面还有几层
+  if(S.vox.brush==='fill'&&S.vox.fillN>0){
+    const tc=project([cx,cy+hs*1.4,cz],B);
+    items.push({z:Z_VOID-1, fn:()=>{
+      ctx.save();
+      const nk=(S.vox.fillIdx|0)+1, nN=S.vox.fillN;
+      const txt=S.vox.aim
+        ? ('瞄准 · 第 '+((S.vox.aim.idx|0)+1)+' / '+S.vox.aim.raw.length+' 块')
+        : ('第 '+nk+' / '+nN+' 层 · '+(S.vox.fillOrder==='in'?'由内向外':'由外向内'));
+      ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      const w=ctx.measureText(txt).width+14;
+      ctx.fillStyle='rgba(13,148,136,.94)';
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(tc.x-w/2,tc.y-9.5,w,19,9.5); else ctx.rect(tc.x-w/2,tc.y-9.5,w,19);
+      ctx.fill();
+      ctx.fillStyle='#fff';ctx.fillText(txt,tc.x,tc.y);
+      ctx.restore();
+    }});
+  }
+}
+function drawVoidHints(items,B){                    // 挖空的格子：淡虚框标出位置（透墙可见，挖了/填回立刻能看出）
+  const n=S.vox.n, cell=S.vox.cell, half=n*cell/2;
+  const gap=Math.min(S.vox.gap,cell*0.45), hs=(cell-gap)/2*0.94;
+  const CORN=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+  const EG=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const FQ=[[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]];
+  let cnt=0;
+  for(let k=0;k<n;k++)for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+    const c=voxAt(i,j,k); if(!c||c.on) continue;
+    if(!voxPeelOK(i,j,k)) continue;              // 被剖层切掉的块不再额外提示
+    if(++cnt>40) return;
+    const cx=(i+0.5)*cell-half, cy=(j+0.5)*cell-half, cz=(k+0.5)*cell-half;
+    const P=CORN.map(p=>project([cx+p[0]*hs,cy+p[1]*hs,cz+p[2]*hs],B));
+    items.push({z:Z_VOID, fn:()=>{
+      ctx.save();
+      ctx.beginPath();
+      FQ.forEach(q=>{
+        ctx.moveTo(P[q[0]].x,P[q[0]].y);
+        for(let t=1;t<4;t++) ctx.lineTo(P[q[t]].x,P[q[t]].y);
+        ctx.closePath();
+      });
+      ctx.fillStyle='rgba(71,85,105,.07)';ctx.fill();
+      ctx.lineWidth=1.1;ctx.strokeStyle='rgba(71,85,105,.42)';ctx.setLineDash([3,3]);
+      EG.forEach(e=>{ctx.beginPath();ctx.moveTo(P[e[0]].x,P[e[0]].y);ctx.lineTo(P[e[1]].x,P[e[1]].y);ctx.stroke();});
+      ctx.setLineDash([]);ctx.restore();
+    }});
+  }
+}
+function solveLin(A,b){                            // 高斯消元解线性方程组
+  const n=b.length;
+  for(let i=0;i<n;i++){
+    let piv=i;
+    for(let r=i+1;r<n;r++) if(Math.abs(A[r][i])>Math.abs(A[piv][i])) piv=r;
+    const t1=A[i];A[i]=A[piv];A[piv]=t1; const t2=b[i];b[i]=b[piv];b[piv]=t2;
+    const d=A[i][i]; if(Math.abs(d)<1e-12) continue;
+    for(let c=i;c<n;c++) A[i][c]/=d; b[i]/=d;
+    for(let r=0;r<n;r++){
+      if(r===i) continue;
+      const f=A[r][i]; if(!f) continue;
+      for(let c=i;c<n;c++) A[r][c]-=f*A[i][c];
+      b[r]-=f*b[i];
+    }
+  }
+  return b;
+}
+function homography(src,dst){                     // 4 点对 → 3×3 单应（h33=1）
+  const A=[],b=[];
+  for(let i=0;i<4;i++){
+    const [u,v]=src[i], [x,y]=dst[i];
+    A.push([u,v,1,0,0,0,-u*x,-v*x]); b.push(x);
+    A.push([0,0,0,u,v,1,-u*y,-v*y]); b.push(y);
+  }
+  const h=solveLin(A,b);
+  return [h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];
+}
+function applyH(H,u,v){
+  const w=H[6]*u+H[7]*v+1;
+  return [(H[0]*u+H[1]*v+H[2])/w,(H[3]*u+H[4]*v+H[5])/w];
+}
+function drawTexQuad(tex,P){                      // 透视正确的四边形贴图（细分 + 仿射 + 逐块裁剪）
+  const Hh=homography([[0,0],[1,0],[1,1],[0,1]],P);
+  const N=14, W=tex.width, Ht=tex.height;
+  const outer=new Path2D();
+  outer.moveTo(P[0][0],P[0][1]);
+  for(let i=1;i<4;i++) outer.lineTo(P[i][0],P[i][1]);
+  outer.closePath();
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const u0=i/N,v0=j/N,u1=(i+1)/N,v1=(j+1)/N;
+    const a=applyH(Hh,u0,v0), b=applyH(Hh,u1,v0), c=applyH(Hh,u1,v1), d=applyH(Hh,u0,v1);
+    const du=(u1-u0)*W, dv=(v1-v0)*Ht;
+    const sx=(b[0]-a[0])/du, sy=(b[1]-a[1])/du;
+    const tx=(d[0]-a[0])/dv, ty=(d[1]-a[1])/dv;
+    const ex=a[0]-sx*u0*W-tx*v0*Ht, ey=a[1]-sy*u0*W-ty*v0*Ht;
+    ctx.save();
+    ctx.clip(outer);                              // 先限制在面内
+    ctx.beginPath();                              // 再限制在本块范围内
+    ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);
+    ctx.closePath();ctx.clip();
+    ctx.transform(sx,sy,tx,ty,ex,ey);
+    ctx.drawImage(tex,-1,-1,W+2,Ht+2);            // 略放大，消除块间亚像素缝
+    ctx.restore();
+  }
+}
+/* 阵列截面：整体底（多环 evenodd，洞保持空） */
+function drawSectionOutline(prs){
+  const path=new Path2D();
+  prs.forEach(pr=>{
+    if(!pr.length) return;
+    path.moveTo(pr[0].x,pr[0].y);
+    for(let i=1;i<pr.length;i++) path.lineTo(pr[i].x,pr[i].y);
+    path.closePath();
+  });
+  // 底色调暗：原来近乎不透明的奶白，整块截面像在发光，小格子之间完全没有对比
+  ctx.fillStyle='rgba(107,96,85,.30)';
+  ctx.fill(path,'evenodd');                    // 洞被挖空，露出后面的方块
+  ctx.strokeStyle='#9a3412';ctx.lineWidth=2.2; // 外轮廓：深一点、细一点，别抢小格子的线
+  ctx.stroke(path);
+}
+/* 阵列截面：单个小方块被切出来的那一片（填充该块颜色 + 格线）
+   要点：每格往中心收 0.9px → 格与格之间留出细缝，底色的暗调从缝里透出来，
+   于是「一个个小格子拼成截面」的结构才看得出来，而不是糊成一整片亮色。 */
+function shrinkPoly(pr,px){                   // 多边形整体内缩 px 像素 → 相邻格之间留出等宽的缝
+  const n=pr.length||0;                       // （按每条边的内法向平移，再求相邻平移线的交点）
+  if(n<3) return pr;
+  let A=0;
+  for(let i=0;i<n;i++){ const a=pr[i], b=pr[(i+1)%n]; A+=a.x*b.y-b.x*a.y; }
+  const sgn=A>=0?1:-1;
+  const LN=[];
+  for(let i=0;i<n;i++){
+    const a=pr[i], b=pr[(i+1)%n];
+    let nx=-(b.y-a.y), ny=(b.x-a.x);
+    const l=Math.hypot(nx,ny);
+    if(l<1e-9) return pr;                     // 退化边：不内缩，保持原样
+    nx=nx/l*sgn; ny=ny/l*sgn;
+    LN.push({px:a.x+nx*px, py:a.y+ny*px, dx:b.x-a.x, dy:b.y-a.y});
+  }
+  const out=[];
+  for(let i=0;i<n;i++){
+    const A1=LN[(i-1+n)%n], B1=LN[i];
+    const den=A1.dx*B1.dy-A1.dy*B1.dx;
+    if(Math.abs(den)<1e-9){ out.push({x:B1.px,y:B1.py}); continue; }
+    const t=((B1.px-A1.px)*B1.dy-(B1.py-A1.py)*B1.dx)/den;
+    out.push({x:A1.px+A1.dx*t, y:A1.py+A1.dy*t});
+  }
+  let A2=0;
+  for(let i=0;i<n;i++){ const a=out[i], b=out[(i+1)%n]; A2+=a.x*b.y-b.x*a.y; }
+  if(A2===0||(A2>0)!==(A>0)) return pr;       // 内缩过头（翻转）→ 退回原多边形
+  return out;
+}
+function voxCellFill(rgb){                     // 3D 截面格子填充色：比原色压深一档，否则浅色叠亮底几乎发白
+  const r=Math.round(rgb[0]*0.78), g=Math.round(rgb[1]*0.78), b=Math.round(rgb[2]*0.78);
+  return 'rgba('+r+','+g+','+b+',.70)';
+}
+function drawVoxSectionCell(pr,rgb){
+  const sh=shrinkPoly(pr,0.9);
+  const path=new Path2D();
+  path.moveTo(sh[0].x,sh[0].y);
+  for(let i=1;i<sh.length;i++) path.lineTo(sh[i].x,sh[i].y);
+  path.closePath();
+  ctx.fillStyle=voxCellFill(rgb);               // 颜色压深一档：原色太浅，叠在亮底上几乎发白
+  ctx.fill(path);
+  ctx.strokeStyle='rgba(38,26,14,.55)';        // 格线：深棕细线，比原来的浅棕清楚得多
+  ctx.lineWidth=1.15;
+  ctx.stroke(path);
+}
+function drawSectionFace(pr,hatch){
+  const path=new Path2D();
+  path.moveTo(pr[0].x,pr[0].y);
+  for(let i=1;i<pr.length;i++) path.lineTo(pr[i].x,pr[i].y);
+  path.closePath();
+  ctx.fillStyle='rgba(251,226,150,.66)';ctx.fill(path);
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  pr.forEach(p=>{minx=Math.min(minx,p.x);maxx=Math.max(maxx,p.x);miny=Math.min(miny,p.y);maxy=Math.max(maxy,p.y);});
+  if(hatch!==false){                            // 剖面斜纹（洞口不画，保持干净）
+    ctx.save();ctx.clip(path);
+    const H=maxy-miny, W=maxx-minx;
+    ctx.strokeStyle='rgba(180,83,9,.42)';ctx.lineWidth=1.15;
+    for(let d=-H;d<W+H;d+=6){
+      ctx.beginPath();ctx.moveTo(minx+d,miny);ctx.lineTo(minx+d-H,maxy);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.strokeStyle='#9a3412';ctx.lineWidth=2.2;ctx.stroke(path);
+  pr.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2.6,0,7);ctx.fillStyle='#9a3412';ctx.fill();});
+}
+function editRect(){
+  const side=Math.min(CW,CH)*0.64;
+  return {x:(CW-side)/2, y:(CH-side)/2-14, side};
+}
+function drawEditOverlay(){
+  const fid=S.cube.edit;
+  if(fid<0) return;
+  const r=editRect();
+  ctx.fillStyle='rgba(15,23,42,.5)';ctx.fillRect(0,0,CW,CH);
+  ctx.fillStyle='#fff';ctx.fillRect(r.x,r.y,r.side,r.side);
+  ctx.drawImage(CUBE_TEX[fid],r.x,r.y,r.side,r.side);
+  ctx.strokeStyle='#0d9488';ctx.lineWidth=3;ctx.strokeRect(r.x,r.y,r.side,r.side);
+  ctx.fillStyle='#fff';ctx.font='600 14px sans-serif';ctx.textAlign='center';
+  ctx.fillText('正在绘制：'+CUBE_NAME[fid]+'面',CW/2,r.y-14);
+  const hint='在此方框内按住拖动即可绘制，完成后点右侧「保存并返回」';
+  ctx.font='11.5px sans-serif';
+  const tw=ctx.measureText(hint).width;
+  ctx.fillStyle='rgba(255,255,255,.92)';
+  ctx.fillRect(CW/2-tw/2-9,r.y+r.side+7,tw+18,20);
+  ctx.fillStyle='#334155';
+  ctx.fillText(hint,CW/2,r.y+r.side+21);
+  ctx.textAlign='left';
+}
+function cubePaintStart(pos){
+  const fid=S.cube.edit, r=editRect();
+  if(pos.x<r.x||pos.x>r.x+r.side||pos.y<r.y||pos.y>r.y+r.side) return false;
+  const u=(pos.x-r.x)/r.side, v=(pos.y-r.y)/r.side;
+  paintStroke={color:S.cube.color,w:S.cube.w,erase:S.cube.tool==='eraser',
+               pts:[[u*TEX_SIZE,v*TEX_SIZE]]};
+  strokeTo(paintStroke,fid);
+  invalidate();
+  return true;
+}
+function cubePaintMove(pos){
+  if(!paintStroke) return;
+  const fid=S.cube.edit, r=editRect();
+  const u=clamp((pos.x-r.x)/r.side,0,1), v=clamp((pos.y-r.y)/r.side,0,1);
+  const last=paintStroke.pts[paintStroke.pts.length-1];
+  const nx=u*TEX_SIZE, ny=v*TEX_SIZE;
+  if(Math.hypot(nx-last[0],ny-last[1])<1.2) return;
+  paintStroke.pts.push([nx,ny]);
+  strokeTo(paintStroke,fid);
+  invalidate();
+}
+function cubePaintEnd(){
+  if(!paintStroke) return;
+  CUBE_STROKES[S.cube.edit].push(paintStroke);
+  paintStroke=null;
+  updateCubeUI(); invalidate();
+}
+function cubeUndo(){
+  const fid=S.cube.edit; if(fid<0) return;
+  if(!CUBE_STROKES[fid].length){toast('该面还没有笔迹','bad');return;}
+  CUBE_STROKES[fid].pop(); redrawFace(fid); updateCubeUI(); invalidate();
+  toast('已撤销一笔','good');
+}
+function cubeClearFace(){
+  const fid=S.cube.edit; if(fid<0) return;
+  CUBE_STROKES[fid]=[]; redrawFace(fid); updateCubeUI(); invalidate();
+  toast('已清空「'+CUBE_NAME[fid]+'」面','good');
+}
+function cubeClearAll(){
+  for(let i=0;i<6;i++){CUBE_STROKES[i]=[];redrawFace(i);}
+  updateCubeUI(); invalidate(); toast('已清空全部六个面','good');
+}
+function cubeSave(){ S.cube.edit=-1; updateCubeUI(); invalidate(); toast('已保存，可继续点选其他面绘制','good'); }
+function cubeEditFace(fid){ S.cube.edit=fid; updateCubeUI(); invalidate(); }
+function setFold(target){                            // 展开 / 合拢动画
+  if(S.cube.edit>=0){ S.cube.edit=-1; updateCubeUI(); }   // 折叠时自动保存退出绘制
+  const from=S.cube.t, t0=performance.now(), dur=680;
+  const c0={theta:cam.theta,phi:cam.phi,dist:cam.dist}, c1=camForFold(target);
+  (function step(){
+    const k=Math.min(1,(performance.now()-t0)/dur);
+    const e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    S.cube.t=from+(target-from)*e;
+    cam.theta=c0.theta+(c1.theta-c0.theta)*e;
+    cam.phi=c0.phi+(c1.phi-c0.phi)*e;
+    cam.dist=c0.dist+(c1.dist-c0.dist)*e;
+    refreshModel();
+    document.getElementById('foldV').textContent=fmt(S.cube.t,2);
+    document.getElementById('foldR').value=S.cube.t;
+    if(k<1) requestAnimationFrame(step);
+  })();
+}
+function quadLoop(pr){                           // 经过一串点的平滑闭合曲线（每段为二次贝塞尔）
+  const n=pr.length, out=[];
+  if(n<3) return out;
+  const mid=i=>[(pr[i].x+pr[(i+1)%n].x)/2,(pr[i].y+pr[(i+1)%n].y)/2];
+  for(let i=0;i<n;i++){
+    const m0=mid((i-1+n)%n), m1=mid(i);
+    out.push({a:m0,c:[pr[i].x,pr[i].y],b:m1,z:pr[i].z});
+  }
+  return out;
+}
+function strokeSmoothLoop(items,pr,lw,alpha){   // 圆周 / 轮廓：用平滑曲线，不画成一段段等长的折线
+  for(const q of quadLoop(pr)){
+    items.push({z:q.z-0.002, fn:()=>{
+      ctx.strokeStyle='rgba(30,41,59,'+alpha+')';ctx.lineWidth=lw;
+      ctx.beginPath();ctx.moveTo(q.a[0],q.a[1]);ctx.quadraticCurveTo(q.c[0],q.c[1],q.b[0],q.b[1]);ctx.stroke();
+    }});
+  }
+}
+function spheroidOutline(M,B){                  // 球 / 椭球的解析轮廓（椭圆），比网格棱线平滑得多
+  const a=M.ra, b=M.rb, c=M.rc, N=80;
+  const u=normv(B.eye);
+  let e1=Math.abs(u[1])<0.9?[0,1,0]:[1,0,0];
+  e1=normv(subv(e1,mulv(u,dotv(e1,u))));
+  const e2=normv(crossv(u,e1));
+  const pts=[];
+  for(let i=0;i<N;i++){
+    const t=2*Math.PI*i/N;
+    const nv=addv(mulv(e1,Math.cos(t)),mulv(e2,Math.sin(t)));
+    const h=Math.hypot(a*nv[0],b*nv[1],c*nv[2]);
+    pts.push(project([a*a*nv[0]/h, b*b*nv[1]/h, c*c*nv[2]/h],B));
+  }
+  return pts;
+}
+function collectEdges(items,B){
+  const M=S.model;
+  const seg=(pa,pb,lw,alpha)=>{
+    const a=project(pa,B), b=project(pb,B);
+    items.push({z:(a.z+b.z)/2-0.002, fn:()=>{
+      ctx.strokeStyle='rgba(30,41,59,'+alpha+')';ctx.lineWidth=lw;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}});
+  };
+  if(S.mode==='voxel'){               // 阵列：每个小方块暴露面画边框（格子感）
+    for(const f of M.faces){
+      const pts=f.idx.map(i=>M.verts[i]);
+      const pr=pts.map(p=>project(p,B));
+      let z=0; pr.forEach(p=>z+=p.z); z/=pr.length;
+      items.push({z:z-0.002, fn:()=>{
+        ctx.beginPath();ctx.moveTo(pr[0].x,pr[0].y);
+        for(let i=1;i<pr.length;i++) ctx.lineTo(pr[i].x,pr[i].y);
+        ctx.closePath();
+        ctx.strokeStyle='rgba(30,41,59,.55)';ctx.lineWidth=1;ctx.stroke();
+      }});
+    }
+    return;
+  }
+  if(S.pre==='regular'){              // 正多面体：逐棱绘制
+    for(const e of M.edges) seg(e.pa,e.pb,1.35,.7);
+    return;
+  }
+  if(S.baseType!=='circle'&&!M.sph){  // 多面体：逐棱绘制
+    for(const e of M.edges) seg(e.pa,e.pb,1.15,.68);
+    return;
+  }
+  if(M.sph){                          // 球 / 椭球：解析轮廓 + 可选经纬网，不画面片棱
+    strokeSmoothLoop(items,spheroidOutline(M,B),1.3,.55);
+    if(S.lattice) for(const rg of (M.rings||[])){
+      const pr=rg.map(i=>project(M.verts[i],B));
+      strokeSmoothLoop(items,pr,0.9,.22);
+    }
+    return;
+  }
+  if(S.baseType==='circle'&&M.smoothRings&&M.smoothRings.length){   // 圆底：上/下口画成光滑圆周
+    for(const rg of M.smoothRings){
+      if(!rg||rg.length<3) continue;
+      strokeSmoothLoop(items,rg.map(i=>project(M.verts[i],B)),1.35,.75);
+    }
+  }
+  // 旋转体：底/顶圆周 + 轮廓线
+  for(const [key,fl] of M.edgeFaces){
+    const ij=key.split('_'), i=+ij[0], j=+ij[1];
+    const ring=(M.baseSet.has(i)&&M.baseSet.has(j))||(M.topSet.has(i)&&M.topSet.has(j));
+    if(ring&&M.smoothRings&&M.smoothRings.length) continue;   // 圆周已用平滑曲线画过
+    let vis=ring;
+    if(!ring&&fl.length===2){
+      const f1=M.faces[fl[0]], f2=M.faces[fl[1]];
+      const d1=dotv(f1.n,normv(subv(B.eye,f1.c)));
+      const d2=dotv(f2.n,normv(subv(B.eye,f2.c)));
+      vis=(d1>0)!==(d2>0);
+    }else if(!ring) vis=true;
+    if(vis) seg(M.verts[i],M.verts[j],ring?1.35:1.1,ring?.75:.5);
+  }
+}
+function label(txt,col,x,y){
+  ctx.font='600 11px sans-serif';
+  const w=ctx.measureText(txt).width;
+  ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(x-3,y-11,w+6,14);
+  ctx.fillStyle=col;ctx.fillText(txt,x,y);
+}
+function arrow(a,b,col){
+  const dx=b.x-a.x, dy=b.y-a.y, l=Math.hypot(dx,dy)||1, ux=dx/l, uy=dy/l;
+  const px=b.x-ux*7, py=b.y-uy*7;
+  ctx.fillStyle=col;ctx.beginPath();
+  ctx.moveTo(b.x,b.y);
+  ctx.lineTo(px-uy*3.2,py+ux*3.2);
+  ctx.lineTo(px+uy*3.2,py-ux*3.2);
+  ctx.closePath();ctx.fill();
+}
+let rafId=null;
+function loop(){
+  if(S.autoRot){cam.theta+=0.006;dirty=true;}
+  if(S.vox.flash){                       // 填回脉冲动画：约 0.8 秒
+    if(nowMs()-S.vox.flash.t>820) S.vox.flash=null; else dirty=true;
+  }
+  if(dirty){dirty=false;try{draw();}catch(e){console.error(e);}}
+  rafId=requestAnimationFrame(loop);
+}
+function gizmos(){
+  const M=S.model; if(!M) return [];
+  if(M.cube) return [];                        // 涂鸦模式：只用滚轮缩放
+  if(M.vox){                                   // 阵列模式：拖角点改整体尺寸
+    const half=voxSize()/2;
+    return [{k:'V', t:'a', c:'#0d9488', p:[half,M.y0,half]}];
+  }
+  if(M.sph&&S.pre==='ellipsoid')               // 椭球：三个半轴手柄
+    return [{k:'EA',t:'a',c:'#0d9488',p:[S.eA,0,0]},
+            {k:'EB',t:'b',c:'#16a34a',p:[0,S.eB,0]},
+            {k:'EC',t:'c',c:'#4f46e5',p:[0,0,S.eC]}];
+  if(M.sph)                                    // 球：赤道半径手柄
+    return [{k:'SR',t:'R',c:'#0d9488',p:[S.sR,0,0]}];
+  if(M.reg)                                    // 正多面体：外接球半径手柄
+    return [{k:'GR',t:'R',c:'#0d9488',p:[S.gR,0,0]}];
+  const out=[{k:'R', t:'R', c:'#0d9488', p:M.verts[M.baseIdx[0]]}];
+  if(S.topK>1e-6) out.push({k:'K', t:'k', c:'#16a34a', p:M.verts[M.topIdx[0]]});
+  out.push({k:'H', t:'h', c:'#4f46e5', p:[0,M.y1,0]});
+  return out;
+}
+function updateHud(){
+  const M=S.model; let s;
+  if(S.mode==='cube'){
+    const done=CUBE_STROKES.filter(a=>a.length>0).length;
+    s='<b>正方体：</b>六面涂鸦　<b>已绘：</b>'+done+' / 6 面　<b>展开图：</b>'+NETS[S.cube.net].label+
+      '　<b>展开度：</b>'+fmt(S.cube.t,2);
+    s+='<br>'+(S.cube.edit>=0?('正在绘制：<b>'+CUBE_NAME[S.cube.edit]+'面</b>'):'单击任一空白面即可放大绘制');
+    if(S.section) s+='　<b>截面：</b>'+S.section.info;
+    document.getElementById('hud').innerHTML=s;
+    return;
+  }
+  if(S.mode==='voxel'){
+    const n=S.vox.n;
+    s='<b>立方体阵列：</b>'+n+'×'+n+'×'+n+'　<b>块数：</b>'+voxCount()+' / '+voxTotal()+
+      '　<b>小方块边长：</b>'+fmt(S.vox.cell,2)+'　<b>大立方体 a：</b>'+fmt(voxSize(),2)+
+      (S.vox.peel?('　<b>透视：</b>'+peelText()+'（显示 '+voxVisibleCount()+' 块）'):'');
+  }else if(S.pre==='sphere'){
+    s='<b>类型：</b>球　<b>半径 R：</b>'+fmt(S.sR,2)+'　<b>直径：</b>'+fmt(2*S.sR,2);
+  }else if(S.pre==='ellipsoid'){
+    s='<b>类型：</b>椭球　<b>半轴：</b>a='+fmt(S.eA,2)+'　b='+fmt(S.eB,2)+'　c='+fmt(S.eC,2);
+  }else if(S.pre==='regular'){
+    s='<b>类型：</b>'+REG_SOLIDS[S.regKind].name+'　<b>外接球半径 R：</b>'+fmt(S.gR,2)+
+      '　<b>面 / 棱 / 顶点：</b>'+M.nf+' / '+M.ne+' / '+M.nv;
+  }else{
+    const b=(S.baseType==='circle')?'圆':(S.baseType==='custom'?('自定义 '+M.m+' 边形'):(S.n+' 边形'));
+    s='<b>类型：</b>'+shapeName()+'　<b>底面：</b>'+b+'　<b>R：</b>'+fmt(S.R,2)+'　<b>h：</b>'+fmt(S.h,2)+'　<b>k：</b>'+fmt(S.topK,2);
+  }
+  s+='<br><b>已取点：</b>'+S.picks.length+' 个'+(S.picks.length?'（继续单击表面添加，单击红点可删除）':'（单击立体表面即可取点）');
+  if(S.section) s+='　<b>截面：</b>'+S.section.info;
+  document.getElementById('hud').innerHTML=s;
+}
+function shapeName(){
+  if(S.pre==='sphere') return '球';
+  if(S.pre==='ellipsoid') return '椭球';
+  if(S.pre==='regular') return REG_SOLIDS[S.regKind].name;
+  const side=S.topK<=1e-6?'锥':(Math.abs(S.topK-1)<1e-6?'柱':'台');
+  const base=S.baseType==='circle'?'圆':(S.baseType==='custom'?'多边形':'棱');
+  return base+side+'体';
+}
+function spanOf(){
+  if(S.mode==='voxel') return voxSize();
+  if(S.pre==='sphere') return 2*S.sR;
+  if(S.pre==='ellipsoid') return 2*S.eB;
+  if(S.pre==='regular') return 2*S.gR;
+  return S.h;
+}
+
+/* =========================================================
+   5. 拾取
+   ========================================================= */
+function pickSurface(sx,sy,B){
+  const {o,d}=screenRay(sx,sy,B);
+  let best=null;
+  for(const f of S.model.faces){
+    const pts=f.idx.map(i=>S.model.verts[i]);
+    for(let i=1;i<pts.length-1;i++){
+      const t=rayTri(o,d,pts[0],pts[i],pts[i+1]);
+      if(t!==null&&(!best||t<best.t)) best={t,p:addv(o,mulv(d,t)),f};
+    }
+  }
+  if(!best) return null;
+  // 顶点吸附
+  let snap=best.p, tag='面上';
+  const seen=new Set(); let bd=1e9, bv=null;
+  S.model.faces.forEach(f=>f.idx.forEach(i=>{
+    if(seen.has(i))return; seen.add(i);
+    const v=S.model.verts[i], pp=project(v,B);
+    const dd=Math.hypot(pp.x-sx,pp.y-sy);
+    if(dd<9&&dd<bd){bd=dd;bv=v;}
+  }));
+  if(bv){snap=bv.slice();tag='顶点';}
+  else{
+    let ed=1e9, ep=null;
+    for(const e of S.model.edges){
+      const a=project(e.pa,B), b=project(e.pb,B);
+      const vx=b.x-a.x, vy=b.y-a.y, wx=sx-a.x, wy=sy-a.y;
+      const L2=vx*vx+vy*vy||1;
+      let t=clamp((wx*vx+wy*vy)/L2,0,1);
+      const px=a.x+vx*t, py=a.y+vy*t, dd=Math.hypot(sx-px,sy-py);
+      if(dd<7&&dd<ed){ed=dd;ep=lerpv(e.pa,e.pb,t);}
+    }
+    if(ep){snap=ep;tag='棱上';}
+  }
+  return {p:snap,tag,vox:best.f&&best.f.vox?best.f.vox:null,
+          cf:best.f&&best.f.cubeFace!==undefined?best.f.cubeFace:null};
+}
+function nearestSurfacePoint(p){
+  // 求点 p 到所有三角面的最近点
+  let best=null;
+  const trisAll=[];
+  for(const f of S.model.faces){
+    const pts=f.idx.map(i=>S.model.verts[i]);
+    for(let i=1;i<pts.length-1;i++) trisAll.push([pts[0],pts[i],pts[i+1]]);
+  }
+  for(const tri of trisAll){
+    const q=closestOnTri(p,tri);
+    const dd=distv(p,q);
+    if(!best||dd<best.d) best={d:dd,p:q};
+  }
+  return best;
+}
+function closestOnTri(p,tri){
+  const [a,b,c]=tri;
+  const ab=subv(b,a), ac=subv(c,a), ap=subv(p,a);
+  const d1=dotv(ab,ap), d2=dotv(ac,ap);
+  if(d1<=0&&d2<=0) return a.slice();
+  const bp=subv(p,b), d3=dotv(ab,bp), d4=dotv(ac,bp);
+  if(d3>=0&&d4<=d3) return b.slice();
+  const vc=d1*d4-d3*d2;
+  if(vc<=0&&d1>=0&&d3<=0){const v=d1/(d1-d3);return addv(a,mulv(ab,v));}
+  const cp=subv(p,c), d5=dotv(ab,cp), d6=dotv(ac,cp);
+  if(d6>=0&&d5<=d6) return c.slice();
+  const vb=d5*d2-d1*d6;
+  if(vb<=0&&d2>=0&&d6<=0){const w=d2/(d2-d6);return addv(a,mulv(ac,w));}
+  const va=d3*d6-d5*d4;
+  if(va<=0&&(d4-d3)>=0&&(d5-d6)>=0){const w=(d4-d3)/((d4-d3)+(d5-d6));return lerpv(b,c,w);}
+  const den=1/(va+vb+vc);
+  const v=vb*den, w=vc*den;
+  return addv(a,addv(mulv(ab,v),mulv(ac,w)));
+}
+
+/* =========================================================
+   6. 平面与截面
+   ========================================================= */
+function makePlane(n,p){
+  n=normv(n);
+  const d=dotv(n,p);
+  let u;
+  if(Math.abs(n[1])<0.9) u=normv(crossv([0,1,0],n));   // 铅垂面：u 取水平方向，2D 图更符合直觉
+  else u=[1,0,0];
+  u=normv(subv(u,mulv(n,dotv(u,n))));
+  const v=normv(crossv(n,u));
+  return {n,d,u,v,origin:p.slice()};
+}
+function planeSD(pl,p){return dotv(pl.n,p)-pl.d;}
+
+function collectSegs(pl){                        // 平面与每个面多边形的交线段
+  const M=S.model, EP=1e-7*Math.max(1,M.diag);
+  const sd=p=>planeSD(pl,p), segs=[];
+  for(const f of M.faces){                       // 按「整个面」求交，避免三角化对角线产生伪顶点
+    const pts=f.idx.map(i=>M.verts[i]);
+    const s=pts.map(sd), hit=[];
+    let allOn=true;
+    for(const v of s) if(Math.abs(v)>1e-9*M.diag) allOn=false;
+    if(allOn) continue;                          // 面完全躺在平面上：内部面片，不贡献边界
+    for(let a=0;a<pts.length;a++){
+      const b=(a+1)%pts.length;
+      if(Math.abs(s[a])<EP&&Math.abs(s[b])<EP){ hit.push(pts[a]); continue; }
+      if(Math.abs(s[a])<EP) hit.push(pts[a]);
+      if((s[a]>EP&&s[b]<-EP)||(s[a]<-EP&&s[b]>EP)) hit.push(lerpv(pts[a],pts[b],s[a]/(s[a]-s[b])));
+    }
+    const uq=[];
+    for(const p of hit) if(!uq.some(q=>distv(p,q)<EP*10)) uq.push(p);
+    if(uq.length>2){                             // 凹面可能多于 2 点：沿交线排序取两端
+      const dir=normv(subv(uq[uq.length-1],uq[0]));
+      uq.sort((A,B)=>dotv(A,dir)-dotv(B,dir));
+    }
+    if(uq.length>=2) segs.push([uq[0],uq[uq.length-1]]);
+  }
+  return segs;
+}
+/* ---- 阵列模式：把截面按小方块切成一个个格子（逐块求截口） ----
+   连续体用整体轮廓即可；但体素阵列是「一堆小方块拼起来的」，
+   截面就应该看得出一格一格的痕迹，涂过色的块还要透出各自颜色。 */
+let VOX_SEC_CACHE={sig:'',cells:null};
+function voxCellPoly(pl,i,j,k){
+  const v=S.vox, cell=v.cell, hs=cell/2, half=v.n*cell/2;
+  const cx=(i+0.5)*cell-half, cy=(j+0.5)*cell-half, cz=(k+0.5)*cell-half;
+  const C=voxCorners(hs), D=Math.max(1,S.model.diag), EP=1e-7*D, pts=[];
+  for(let d=0;d<6;d++){
+    const q=C[d].map(p=>[cx+p[0],cy+p[1],cz+p[2]]);
+    const s=q.map(p=>planeSD(pl,p));
+    let allOn=true; for(const t of s) if(Math.abs(t)>1e-9*D) allOn=false;
+    if(allOn) continue;                        // 整个面贴在平面上：边界由相邻面给出
+    for(let a=0;a<4;a++){
+      const b=(a+1)%4;
+      if(Math.abs(s[a])<EP) pts.push(q[a]);
+      if((s[a]>EP&&s[b]<-EP)||(s[a]<-EP&&s[b]>EP)) pts.push(lerpv(q[a],q[b],s[a]/(s[a]-s[b])));
+    }
+  }
+  const uq=[];
+  for(const p of pts) if(!uq.some(q=>distv(p,q)<EP*10)) uq.push(p);
+  if(uq.length<3) return null;
+  return convexHull(pl,uq);                    // 凸体 ∩ 平面 = 凸多边形
+}
+function voxCellsForPlane(pl){                  // 纯计算：某平面切到了哪些小方块（不依赖 S.section）
+  const v=S.vox, out=[];
+  for(let k=0;k<v.n;k++)for(let j=0;j<v.n;j++)for(let i=0;i<v.n;i++){
+    if(!voxShown(i,j,k)) continue;             // 挖空的、被剖层切掉的块不参与
+    const poly=voxCellPoly(pl,i,j,k);
+    if(poly&&poly.length>=3) out.push({i,j,k,poly});
+  }
+  return out;
+}
+function voxSectionCells(){
+  if(S.mode!=='voxel'||!S.section||!S.section.plane) return null;
+  const pl=S.section.plane, v=S.vox;
+  // 在场状态也进签名：挖空 / 剖层 / 涂色都会让格子在不在、什么颜色发生变化
+  let mask='';
+  for(let k=0;k<v.n;k++)for(let j=0;j<v.n;j++)for(let i=0;i<v.n;i++){
+    const c=voxAt(i,j,k);
+    mask+=(c&&c.on&&voxPeelOK(i,j,k))?'1':'0';
+  }
+  const sig=[pl.n[0],pl.n[1],pl.n[2],pl.d,v.n,v.cell,(v.gap||0),mask]
+    .map(t=>(typeof t==='number')?t.toFixed(6):String(t)).join('|');
+  if(VOX_SEC_CACHE.sig===sig) return VOX_SEC_CACHE.cells;
+  const cells=voxCellsForPlane(pl);
+  VOX_SEC_CACHE={sig,cells};
+  return cells;
+}
+function computeSection(pl){
+  const M=S.model, SNAP=2e-4*Math.max(1,M.diag);
+  const segs=collectSegs(pl);
+  if(!segs.length) return {poly:null, ok:false, why:'该平面与立体没有接触，请调整位置'};
+  const loops=buildLoops(segs,SNAP,pl);
+  if(loops) return {poly:loops[0], loops, ok:true};
+  // 平面恰好经过棱/顶点等退化情形：沿法向微移后重试
+  for(const eps of [1e-6,-1e-6,4e-6,-4e-6]){
+    const pl2=makePlane(pl.n, addv(pl.origin, mulv(pl.n, eps*M.diag)));
+    const ls=buildLoops(collectSegs(pl2),SNAP,pl2);
+    if(ls) return {poly:ls[0], loops:ls, ok:true, nudged:true};
+  }
+  if(S.mode==='solid'){                          // 连续体为凸体，凸包是安全的兜底
+    const pts2=[]; segs.forEach(([a,b])=>{pts2.push(a,b);});
+    const hull=convexHull(pl,pts2);
+    if(hull&&hull.length>=3) return {poly:hull, loops:[hull], ok:true};
+  }
+  // 阵列被挖空后，缺口处没有面，轮廓可能连不成闭合环 —— 改用「逐块截口」兜底
+  if(S.mode==='voxel'){
+    const cells=voxCellsForPlane(pl);
+    if(cells.length){
+      const vs=[]; cells.forEach(c=>c.poly.forEach(q=>vs.push(q)));
+      const hull=convexHull(pl,vs);
+      return {poly:hull||cells[0].poly, loops:[], cells, ok:true, voxCells:true};
+    }
+    return {poly:null, ok:false, why:'这个平面没有切到任何小方块，调一下高度/角度再试'};
+  }
+  return {poly:null, ok:false, why:'无法构造闭合截口（可微调参数或换个平面再试）'};
+}
+function buildLoops(segs,SNAP,pl){                  // 支持多连通：返回若干闭合环
+  const nodes=[], k2i=new Map();
+  const key=p=>p.map(t=>Math.round(t/SNAP)).join(',');
+  const idx=p=>{const k=key(p);if(k2i.has(k))return k2i.get(k);k2i.set(k,nodes.length);nodes.push(p);return nodes.length-1;};
+  const pairs=segs.map(s=>[idx(s[0]),idx(s[1])]);
+  const adj=nodes.map(()=>[]);
+  for(const [i,j] of pairs){
+    if(i!==j&&adj[i].indexOf(j)<0){adj[i].push(j);adj[j].push(i);}
+  }
+  if(nodes.some((_,i)=>adj[i].length!==2)) return null;
+  const visited=new Array(nodes.length).fill(false), loops=[];
+  for(let s=0;s<nodes.length;s++){
+    if(visited[s]) continue;
+    const loop=[]; let cur=s, prev=-1, closed=false;
+    for(;;){
+      visited[cur]=true; loop.push(cur);
+      const nbrs=adj[cur];
+      let nxt=-1;
+      for(const x of nbrs) if(x!==prev&&!visited[x]){nxt=x;break;}
+      if(nxt<0){ if(nbrs.indexOf(s)>=0&&loop.length>2) closed=true; break; }
+      prev=cur; cur=nxt;
+    }
+    if(!closed||loop.length<3) return null;
+    loops.push(simplifyLoop(loop.map(i=>nodes[i])));
+  }
+  loops.sort((a,b)=>Math.abs(loopArea(pl,b))-Math.abs(loopArea(pl,a)));   // 大环在前，小环为洞
+  return loops.length?loops:null;
+}
+function pointInLoop(pl,loop,p){           // 平面 2D 内的奇偶规则包含测试
+  const to2=q=>[dotv(subv(q,pl.origin),pl.u),dotv(subv(q,pl.origin),pl.v)];
+  const P=loop.map(to2), q=to2(p);
+  let inside=false;
+  for(let i=0,j=P.length-1;i<P.length;j=i++){
+    const xi=P[i][0],yi=P[i][1],xj=P[j][0],yj=P[j][1];
+    if(((yi>q[1])!==(yj>q[1]))&&(q[0]<(xj-xi)*(q[1]-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+function classifyLoops(pl,loops){         // 被奇数个其它环包含 => 洞；否则为独立区域
+  let holes=0;
+  for(let i=0;i<loops.length;i++){
+    let inside=0;
+    for(let j=0;j<loops.length;j++){
+      if(i===j) continue;
+      if(pointInLoop(pl,loops[j],loops[i][0])) inside++;
+    }
+    if(inside%2===1) holes++;
+  }
+  return {regions:loops.length-holes, holes};
+}
+function simplifyLoop(loop){               // 去掉共线的中间点，让轮廓保持最简
+  const n=loop.length, out=[];
+  for(let i=0;i<n;i++){
+    const a=loop[(i-1+n)%n], b=loop[i], c=loop[(i+1)%n];
+    const v1=normv(subv(b,a)), v2=normv(subv(c,b));
+    if(Math.hypot(...crossv(v1,v2))<1e-9) continue;      // 平行 => 共线
+    out.push(b);
+  }
+  return out.length>=3?out:loop;
+}
+function loopArea(pl,loop){                      // 平面 2D 内的带符号面积（用于区分外环/洞）
+  let A=0;
+  for(let i=0;i<loop.length;i++){
+    const a=loop[i], b=loop[(i+1)%loop.length];
+    const ax=dotv(subv(a,pl.origin),pl.u), ay=dotv(subv(a,pl.origin),pl.v);
+    const bx=dotv(subv(b,pl.origin),pl.u), by=dotv(subv(b,pl.origin),pl.v);
+    A+=ax*by-bx*ay;
+  }
+  return A/2;
+}
+function convexHull(pl,pts){
+  const to2=p=>[dotv(subv(p,pl.origin),pl.u),dotv(subv(p,pl.origin),pl.v)];
+  const P=pts.map(p=>({a:to2(p),o:p}));
+  P.sort((m,n)=>m.a[0]===n.a[0]?m.a[1]-n.a[1]:m.a[0]-n.a[0]);
+  const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const build=arr=>{
+    const st=[];
+    for(const p of arr){
+      while(st.length>=2&&cr(st[st.length-2].a,st[st.length-1].a,p.a)<=0) st.pop();
+      st.push(p);
+    }
+    return st;
+  };
+  const H=build(P.slice()).concat(build(P.slice().reverse()).slice(1,-1));
+  return H.length>=3?H.map(x=>x.o):null;
+}
+function planeFromPoints(pts){
+  const n=pts.length;
+  if(n<3) return {ok:false,msg:'至少需要 3 个点才能唯一确定一个平面，请继续取点。（当前 '+n+' 个）'};
+  // 去重检测
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)
+    if(distv(pts[i],pts[j])<1e-4*S.model.diag)
+      return {ok:false,msg:'第 '+(i+1)+' 与第 '+(j+1)+' 个点重合，请先删除重复点。'};
+  // 取最大三角形定法向
+  let best=-1, bn=null, bc=null;
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)for(let k=j+1;k<n;k++){
+    const ar=Math.hypot(...crossv(subv(pts[j],pts[i]),subv(pts[k],pts[i])))/2;
+    if(ar>best){best=ar;bn=normv(crossv(subv(pts[j],pts[i]),subv(pts[k],pts[i])));bc=avgPts([pts[i],pts[j],pts[k]]);}
+  }
+  const relTol=0.02*S.model.diag;
+  if(best<1e-3*S.model.diag*S.model.diag)
+    return {ok:false,msg:'所选点几乎共线（最大张成面积 '+best.toExponential(2)+'），无法确定唯一平面截面。'};
+  const pl0=makePlane(bn,bc);
+  // 最小二乘修正（平移到质心）
+  const c=avgPts(pts);
+  const pl=makePlane(bn,c);
+  let maxDev=0, who=0;
+  pts.forEach((p,i)=>{const dd=Math.abs(planeSD(pl,p));if(dd>maxDev){maxDev=dd;who=i+1;}});
+  if(maxDev>relTol)
+    return {ok:false,msg:'所选点不在同一平面内，无法构成本截面。最大偏离 '+fmt(maxDev,3)+'（第 '+who+' 个点，容差 '+fmt(relTol,3)+'）。可微调该点坐标使其共面。'};
+  return {ok:true,plane:pl,maxDev};
+}
+
+/* =========================================================
+   7. 截面平面图绘制
+   ========================================================= */
+const cv2=document.getElementById('sec2d'), cx2=cv2.getContext('2d');
+function drawSection2D(){
+  const box=cv2.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv2.width=Math.round(box.width*dpr); cv2.height=Math.round(box.height*dpr);
+  cx2.setTransform(dpr,0,0,dpr,0,0);
+  const W=box.width, H=box.height;
+  cx2.clearRect(0,0,W,H);
+  cx2.fillStyle='#fff';cx2.fillRect(0,0,W,H);
+  const sec=S.section;
+  const cellOnly=!!(sec&&sec.cells&&sec.cells.length);
+  if(!sec||(!sec.poly&&!cellOnly)){ // 网格底纹
+    cx2.strokeStyle='#f1f5f9';cx2.lineWidth=1;
+    for(let x=0;x<W;x+=20){cx2.beginPath();cx2.moveTo(x,0);cx2.lineTo(x,H);cx2.stroke();}
+    for(let y=0;y<H;y+=20){cx2.beginPath();cx2.moveTo(0,y);cx2.lineTo(W,y);cx2.stroke();}
+    cx2.fillStyle='#94a3b8';cx2.font='12px sans-serif';cx2.textAlign='center';
+    cx2.fillText('暂无截面：请先选择常见截面，或取点后点「确定截面」',W/2,H/2);
+    cx2.textAlign='left';
+    return;
+  }
+  const pl=sec.plane, poly=sec.poly||null;
+  const loops=(sec.loops&&sec.loops.length)?sec.loops:(poly?[poly]:[]);
+  const PL=loops.map(lp=>lp.map(p=>[dotv(subv(p,pl.origin),pl.u),dotv(subv(p,pl.origin),pl.v)]));
+  // 挖空后轮廓可能不闭合：这时直接用「每块截口」当几何
+  const CELLS2=(sec.cells&&sec.cells.length)
+    ? sec.cells.map(c=>c.poly.map(p=>[dotv(subv(p,pl.origin),pl.u),dotv(subv(p,pl.origin),pl.v)]))
+    : null;
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  const feed2=P=>P.forEach(p=>{minx=Math.min(minx,p[0]);maxx=Math.max(maxx,p[0]);miny=Math.min(miny,p[1]);maxy=Math.max(maxy,p[1]);});
+  PL.forEach(feed2); if(CELLS2) CELLS2.forEach(feed2);
+  if(minx>maxx){minx=-1;maxx=1;miny=-1;maxy=1;}
+  const pad=42, cw=maxx-minx||1, ch=maxy-miny||1;
+  const sc=Math.min((W-2*pad)/cw,(H-2*pad)/ch);
+  const ox=W/2-(minx+maxx)/2*sc, oy=H/2+(miny+maxy)/2*sc;
+  const T=p=>[ox+p[0]*sc, oy-p[1]*sc];
+  // 背景网格（1 单位）
+  cx2.strokeStyle='#f1f5f9';cx2.lineWidth=1;
+  const g0=T([Math.floor(minx),Math.floor(miny)]), g1=T([Math.ceil(maxx),Math.ceil(maxy)]);
+  for(let gx=Math.floor(minx);gx<=Math.ceil(maxx);gx++){const X=ox+gx*sc;cx2.beginPath();cx2.moveTo(X,g1[1]);cx2.lineTo(X,g0[1]);cx2.stroke();}
+  for(let gy=Math.floor(miny);gy<=Math.ceil(maxy);gy++){const Y=oy-gy*sc;cx2.beginPath();cx2.moveTo(g1[0],Y);cx2.lineTo(g0[0],Y);cx2.stroke();}
+  // 所有环合成一条路径：evenodd 填充自动挖出内部的洞
+  const path=new Path2D();
+  PL.forEach(P=>{
+    path.moveTo(T(P[0])[0],T(P[0])[1]);
+    for(let i=1;i<P.length;i++){const q=T(P[i]);path.lineTo(q[0],q[1]);}
+    path.closePath();
+  });
+  if(PL.length){
+    cx2.fillStyle='rgba(255,252,235,.95)';cx2.fill(path,'evenodd');
+    cx2.fillStyle='rgba(245,158,11,.30)';cx2.fill(path,'evenodd');
+  }
+  // 阵列模式：一格一格地填出各自颜色，格线就是方块分界
+  if(CELLS2){
+    CELLS2.forEach((Pc2,ci2)=>{
+      const c=sec.cells[ci2];
+      const cc=voxAt(c.i,c.j,c.k);
+      const rgb=VOX_PAINT[((cc&&cc.c)||0)%VOX_PAINT.length];
+      const Pc=Pc2.map(q=>T(q));
+      const cp=new Path2D();
+      cp.moveTo(Pc[0][0],Pc[0][1]);
+      for(let i=1;i<Pc.length;i++) cp.lineTo(Pc[i][0],Pc[i][1]);
+      cp.closePath();
+      cx2.fillStyle='rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',.55)';
+      cx2.fill(cp);
+      cx2.strokeStyle='rgba(120,72,20,.42)';cx2.lineWidth=0.9;cx2.stroke(cp);
+    });
+  }
+  if(PL.length){ cx2.strokeStyle='#b45309';cx2.lineWidth=2.2;cx2.stroke(path); }
+  // 主环：顶点 + 边长（点数多时降采样标注）
+  const P=PL[0]||null, mainLoop=loops[0]||null;
+  const n=P?P.length:0, step=n>10?Math.ceil(n/8):1;
+  cx2.font='10px sans-serif';
+  for(let i=0;i<n;i++){
+    const a=T(P[i]), b=T(P[(i+1)%n]);
+    if(i%step===0){
+      const L=distv(mainLoop[i],mainLoop[(i+1)%mainLoop.length]);
+      const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
+      let nx=-(b[1]-a[1]), ny=(b[0]-a[0]);
+      const nl=Math.hypot(nx,ny)||1; nx/=nl; ny/=nl;
+      label2(fmt(L,2),mx+nx*13,my+ny*13,'#78350f');
+    }
+    const isPick=S.picks.some(pk=>distv([pk.x,pk.y,pk.z],mainLoop[i])<0.02*S.model.diag);
+    if(isPick){
+      cx2.beginPath();cx2.arc(a[0],a[1],5,0,7);cx2.fillStyle='#e11d48';cx2.fill();
+      cx2.strokeStyle='#fff';cx2.lineWidth=1.6;cx2.stroke();
+    }else if(n<=14){
+      cx2.beginPath();cx2.arc(a[0],a[1],2.8,0,7);cx2.fillStyle='#92400e';cx2.fill();
+    }
+  }
+  if(loops.length>1){
+    const c=classifyLoops(pl,loops);
+    const txt=(c.holes?c.holes+' 个洞（挖空处）':'')+(c.holes&&c.regions>1?' + ':'')+(c.regions>1?c.regions+' 块分离区域':'');
+    cx2.fillStyle='#b45309';cx2.font='600 10px sans-serif';
+    cx2.fillText(txt,8,14);
+  }
+  cx2.fillStyle='#94a3b8';cx2.font='10px sans-serif';
+  cx2.fillText('单位长度 '+fmt(sc,1)+' px/格',8,H-8);
+}
+function label2(t,x,y,col){
+  cx2.font='10px sans-serif';
+  const w=cx2.measureText(t).width;
+  cx2.fillStyle='rgba(255,255,255,.9)';cx2.fillRect(x-w/2-2,y-9,w+4,13);
+  cx2.fillStyle=col;cx2.textAlign='center';cx2.fillText(t,x,y+1);cx2.textAlign='left';
+}
+function setMetrics(poly,pl,loops,cells){
+  const rs=(loops&&loops.length)?loops:(poly?[poly]:null);
+  const hasCells=!!(cells&&cells.length&&pl);
+  if((!rs||!rs.length)&&!hasCells){
+    document.getElementById('mA').textContent='—';document.getElementById('mP').textContent='—';document.getElementById('mN').textContent='—';return;
+  }
+  if(hasCells){
+    // 阵列：面积按格相加；周长只统计"只出现一次"的边（内部共享边互相抵消）
+    const keyf=t=>Math.round(t/(1e-7*Math.max(1,S.model.diag)));
+    const em=new Map(); let area=0;
+    for(const c of cells){
+      area+=polyArea3(c.poly,pl);
+      const P=c.poly;
+      for(let i=0;i<P.length;i++){
+        const a=P[i], b=P[(i+1)%P.length];
+        const ka=a.map(keyf).join(','), kb=b.map(keyf).join(',');
+        const k=ka<kb?ka+'~'+kb:kb+'~'+ka;
+        if(em.has(k)) em.get(k).n++; else em.set(k,{n:1,a,b});
+      }
+    }
+    let per=0; em.forEach(v=>{ if(v.n===1) per+=distv(v.a,v.b); });
+    document.getElementById('mA').textContent=fmt(Math.abs(area),2);
+    document.getElementById('mP').textContent=fmt(per,2);
+    document.getElementById('mN').textContent=cells.length+' 格';
+    return;
+  }
+  let area=0, per=0, verts=0;
+  for(const lp of rs){
+    area+=loopArea(pl,lp);                       // 带符号：外环减去内部的洞
+    verts+=lp.length;
+    for(let i=0;i<lp.length;i++) per+=distv(lp[i],lp[(i+1)%lp.length]);
+  }
+  document.getElementById('mA').textContent=fmt(Math.abs(area),2);
+  document.getElementById('mP').textContent=fmt(per,2);
+  let note='';
+  if(rs.length>1){
+    const c=classifyLoops(pl,rs);
+    note=(c.holes?' ('+c.holes+' 洞)':'')+(c.regions>1?' ('+c.regions+' 块)':'');
+  }
+  document.getElementById('mN').textContent=verts+note;
+}
+
+/* =========================================================
+   8. 交互：相机、拖动手柄、取点
+   ========================================================= */
+let drag=null, paintStroke=null;
+// 单击判定阈值：鼠标 7px，触屏 12px（原来固定 4px，手指几乎必然超出，导致老是"没点中"）
+const CLICK_SLOP=(typeof matchMedia!=='undefined'&&matchMedia('(pointer:coarse)').matches)?12:7;
+const PT=new Map();                     // 活跃触点：支持双指缩放 / 双指平移
+let pinch=null;
+function evPos(e){
+  const r=cv.getBoundingClientRect();
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerleave',e=>{
+  PT.delete(e.pointerId); if(PT.size<2) pinch=null;
+  if(S.vox.hoverKey!==null){S.vox.hoverKey=null;S.vox.hover=null;invalidate();}
+});
+cv.addEventListener('pointercancel',e=>{
+  PT.delete(e.pointerId); if(PT.size<2) pinch=null;
+  cancelAimPress();
+  drag=null; cv.classList.remove('grabbing');
+});
+cv.addEventListener('pointerdown',e=>{
+  cv.setPointerCapture(e.pointerId);
+  const pos=evPos(e), B=basis();
+  PT.set(e.pointerId,pos);
+  if(PT.size>=2){                       // 第二根手指落下 → 切换成双指手势
+    const q=[...PT.values()], a=q[0], b2=q[1];
+    pinch={d:Math.hypot(a.x-b2.x,a.y-b2.y)||1, mx:(a.x+b2.x)/2, my:(a.y+b2.y)/2};
+    drag=null; paintStroke=null; cv.classList.remove('grabbing');
+    if(S.vox.hoverKey!==null){S.vox.hoverKey=null;S.vox.hover=null;}
+    invalidate(); return;
+  }
+  // 面编辑态：方框内绘制，方框外忽略（不旋转视角）
+  if(S.mode==='cube'&&S.cube.edit>=0){
+    if(cubePaintStart(pos)) drag={type:'paint'};
+    return;
+  }
+  // 阵列画笔优先（左键刷，右键/Shift 仍可旋转平移）
+  if(S.mode==='voxel'&&S.vox.brush!=='view'&&e.button!==2&&!e.shiftKey){
+    if(S.vox.brush==='fill'){
+      // 填回：按下不填。长按 0.43s 进入瞄准（可松手，转视角看清夹在哪两块之间）；
+      // 短按则在松手时填当前瞄准/悬停的那一块；拖动则是转视角。
+      drag={type:'rot', x:pos.x, y:pos.y, sx:pos.x, sy:pos.y, moved:0};
+      updateVoxHover(pos.x,pos.y,B);
+      startAimPress(pos,e);
+      return;
+    }
+    drag={type:'brush'};
+    updateVoxHover(pos.x,pos.y,B);
+    if(brushAt(pos,B)) refreshModel();
+    return;
+  }
+  // 手柄优先
+  if(S.opGizmo){
+    for(const g of gizmos()){
+      const p=project(g.p,B);
+      if(Math.hypot(p.x-pos.x,p.y-pos.y)<12){drag={type:'gizmo',k:g.k,g};return;}
+    }
+  }
+  const brushS=(S.mode==='voxel'&&S.vox.brush!=='view');
+  drag={type:(e.button===2||e.shiftKey)?(brushS?'rot':'pan'):'rot',
+        x:pos.x, y:pos.y, sx:pos.x, sy:pos.y, moved:0};
+  cv.classList.add('grabbing');
+});
+cv.addEventListener('pointermove',e=>{
+  const pos=evPos(e), B=basis();
+  if(PT.has(e.pointerId)) PT.set(e.pointerId,pos);
+  if(pinch&&PT.size>=2){                // 双指：捏合缩放 + 中点平移
+    const q=[...PT.values()], a=q[0], b2=q[1];
+    const d=Math.hypot(a.x-b2.x,a.y-b2.y)||1, mx=(a.x+b2.x)/2, my=(a.y+b2.y)/2;
+    cam.dist=clamp(cam.dist*(pinch.d/d),3,60);
+    const k=cam.dist*0.0016, BB=basis();
+    cam.target=addv(cam.target,addv(mulv(BB.right,-(mx-pinch.mx)*k),mulv(BB.up,(my-pinch.my)*k)));
+    pinch={d,mx,my}; invalidate(); return;
+  }
+  if(aimPress&&Math.hypot(pos.x-aimPress.x,pos.y-aimPress.y)>10) cancelAimPress();  // 手指动了 → 不当成长按
+  if(drag&&drag.type==='paint'){ cubePaintMove(pos); return; }
+  if(!drag&&S.mode==='voxel') updateVoxHover(pos.x,pos.y,B);   // 阵列画笔：实时预览将要操作的方块
+  if(!drag){
+    // 悬停高亮
+    let hot=null;
+    for(const pk of S.picks){
+      const p=project([pk.x,pk.y,pk.z],B);
+      if(Math.hypot(p.x-pos.x,p.y-pos.y)<11) hot=pk.id;
+    }
+    if(hot!==S.hoverPt){S.hoverPt=hot;invalidate();}
+    if(S.mode!=='voxel') cv.classList.toggle('picking',!hot&&!!pickHit(pos,B));
+    return;
+  }
+  if(drag.type==='brush'){                 // 按住拖动连续刷
+    if(brushAt(pos,basis())) refreshModel();
+    return;
+  }
+  drag.moved=Math.max(drag.moved||0,Math.hypot(pos.x-drag.sx,pos.y-drag.sy));
+  if(drag.type==='rot'){
+    cam.theta-=(pos.x-drag.x)*0.008;
+    cam.phi=clamp(cam.phi+(pos.y-drag.y)*0.008,-1.45,1.45);
+  }else if(drag.type==='pan'){
+    const k=cam.dist*0.0016;
+    cam.target=addv(cam.target,addv(mulv(B.right,-(pos.x-drag.x)*k),mulv(B.up,(pos.y-drag.y)*k)));
+  }else if(drag.type==='gizmo'){
+    applyGizmo(drag.k,pos,B);
+  }
+  drag.x=pos.x; drag.y=pos.y;
+  invalidate();
+});
+cv.addEventListener('pointerup',e=>{
+  cv.classList.remove('grabbing');
+  PT.delete(e.pointerId); if(PT.size<2) pinch=null;
+  if(PT.size>0) return;                 // 双指抬起第一根时不触发单击取点
+  const wasPress=aimPress?{x:aimPress.x,y:aimPress.y}:null;
+  cancelAimPress();
+  const d=drag; drag=null;
+  if(!d) return;
+  // 填回：短按 = 填（瞄准态下则把瞄准点挪到点的地方）
+  if(wasPress&&S.mode==='voxel'&&S.vox.brush==='fill'&&(d.moved||0)<CLICK_SLOP){
+    const pp=evPos(e), BB=basis();
+    if(S.vox.aim){ if(!beginAim(pp.x,pp.y,BB)) toast('这里没对准空位，换个位置长按','bad'); }
+    else if(brushAt(pp,BB)) refreshModel();
+    updateVoxStat(); invalidate(); return;
+  }
+  if(d.type==='brush'){ updateVoxStat(); return; }
+  if(d.type==='paint'){ cubePaintEnd(); return; }
+  // 填回画笔下绝不能再走"取点"分支：长按瞄准松手时 wasPress 已被清空，否则会凭空加一个点
+  if(S.mode==='voxel'&&S.vox.brush==='fill'){ updateVoxStat(); invalidate(); return; }
+  const pos=evPos(e);
+  if(d.type==='rot'&&(d.moved||0)<CLICK_SLOP&&S.mode==='cube'){
+    const ch=pickHit(pos,basis());
+    if(ch&&ch.cf!=null) cubeEditFace(ch.cf);
+    else toast('未点中正方体的面，请点在有面的位置','bad');
+    return;
+  }
+  if(d.type==='rot'&&(d.moved||0)<CLICK_SLOP){
+    // 单击 → 取点
+    const hit=pickHit(pos,basis());
+    if(hit){
+      if(hit.pk){ removePick(hit.pk.id); toast('已移除该点','good'); }
+      else addPick(hit.p[0],hit.p[1],hit.p[2],hit.tag);
+    }else{
+      toast('未点中立体表面，请点在有面的位置','bad');
+    }
+  }
+  invalidate();
+});
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  cam.dist=clamp(cam.dist*(1+Math.sign(e.deltaY)*0.09),3,60);
+  invalidate();
+},{passive:false});
+
+function brushAt(pos,B){                 // 画笔：把命中的小方块涂色 / 挖除 / 填回
+  const t=voxTarget(pos.x,pos.y,B);
+  if(!t) return false;
+  const c=voxAt(t.i,t.j,t.k);
+  if(!c) return false;
+  const b=S.vox.brush;
+  if(b==='paint'){ if(c.on&&c.c===S.vox.cur) return false; c.on=true; c.c=S.vox.cur; }
+  else if(b==='cut'){ if(!c.on) return false; c.on=false; }
+  else if(b==='fill'){                                      // 空缺处的方块没法点中，靠射线按层找到
+    if(c.on) return false;
+    c.on=true;
+    S.vox.flash={i:t.i,j:t.j,k:t.k,t:nowMs()};               // 内部块填回去看不见 → 用脉冲圈给反馈
+    const fk=(S.vox.fillIdx|0)+1, fN=Math.max(1,S.vox.fillN|0);
+    toast('已填回第 '+fk+'/'+fN+' 层（'+(S.vox.fillOrder==='in'?'由内向外':'由外向内')+'）','good');
+  }
+  else return false;
+  S.vox.hoverKey=null; S.vox.hover=t;
+  return true;
+}
+function updateVoxStat(){
+  if(S.mode!=='voxel'||!S.vox.cells) return;
+  const el=document.getElementById('vstat'), sz=document.getElementById('vsize');
+  if(el) el.textContent=S.vox.peel
+    ? (voxVisibleCount()+' / '+voxCount()+' / '+voxTotal()+' 块')
+    : (voxCount()+' / '+voxTotal()+' 块');
+  if(sz) sz.textContent=fmt(voxSize(),2);
+}
+function pickHit(pos,B){
+  let p=pickSurface(pos.x,pos.y,B);
+  if(!p){
+    // 容错：精确射线没打中时，在附近由近及远找最近的面（手指/鼠标点偏一点也能取到点）
+    const coarse=(typeof matchMedia!=='undefined'&&matchMedia('(pointer:coarse)').matches);
+    const R=coarse?28:16;
+    let best=null;
+    for(let r=4;r<=R&&!best;r+=4){
+      const N=Math.max(8,Math.round(r*1.2));
+      for(let a=0;a<N;a++){
+        const ang=a/N*Math.PI*2;
+        const sx=pos.x+Math.cos(ang)*r, sy=pos.y+Math.sin(ang)*r;
+        const h=pickSurface(sx,sy,B);
+        if(h){const dd=Math.hypot(sx-pos.x,sy-pos.y); if(!best||dd<best.d) best={h,d:dd};}
+      }
+    }
+    p=best?best.h:null;
+  }
+  if(!p) return null;
+  for(const pk of S.picks){
+    const q=project([pk.x,pk.y,pk.z],B);
+    if(Math.hypot(q.x-pos.x,q.y-pos.y)<11) return {pk,pk2:pk};
+  }
+  if(!p.p) return null;
+  // 阵列模式下把块号带进标签，取点时能看清落在哪一块
+  const tag=(p.vox&&S.mode==='voxel')
+    ? '块('+(p.vox[0]+1)+','+(p.vox[1]+1)+','+(p.vox[2]+1)+')'
+    : p.tag;
+  return {p:p.p,tag,vox:p.vox,cf:p.cf};
+}
+function axisDrag(ray,u){                        // 射线与过原点、方向 u 的直线的「最近点」→ 返回沿 u 的距离
+  const b=dotv(ray.d,u), D=dotv(ray.o,u), E=dotv(ray.o,ray.d);
+  const den=1-b*b; if(Math.abs(den)<1e-6) return null;
+  return Math.abs((E-b*D)/den);
+}
+function applyGizmo(k,pos,B){
+  const ray=screenRay(pos.x,pos.y,B), M=S.model;
+  if(k==='SR'||k==='GR'||k==='EA'||k==='EB'||k==='EC'){
+    const u=(k==='EB')?[0,1,0]:(k==='EC'?[0,0,1]:[1,0,0]);
+    const d=axisDrag(ray,u); if(d===null) return;
+    const v=clamp(d,0.3,8);
+    if(k==='SR') S.sR=v; else if(k==='GR') S.gR=v;
+    else if(k==='EA') S.eA=v; else if(k==='EB') S.eB=v; else S.eC=v;
+    syncUI(); refreshModel(); return;
+  }
+  if(k==='H'){
+    const nrm=normv(crossv(B.right,[0,1,0]));       // 面向相机的竖直面
+    const hit=rayPlane(ray.o,ray.d,nrm,dotv(nrm,[0,M.y1,0]));
+    if(hit){ S.h=clamp(Math.max(0.2,hit[1]-M.y0),0.2,12); syncUI(); refreshModel(); }
+  }else if(k==='R'){
+    const hit=rayPlane(ray.o,ray.d,[0,1,0],M.y0);
+    if(hit){ S.R=clamp(Math.hypot(hit[0],hit[2]),0.3,8); syncUI(); refreshModel(); }
+  }else if(k==='V'){
+    const hit=rayPlane(ray.o,ray.d,[0,1,0],M.y0);
+    if(hit){
+      const dist=Math.hypot(hit[0],hit[2])/Math.SQRT2;      // 角点到中心的水平距离
+      const cell=clamp(2*dist/S.vox.n,0.35,2.2);
+      S.vox.cell=Math.round(cell*100)/100;
+      document.getElementById('vcell').value=S.vox.cell;
+      document.getElementById('vcellv').textContent=fmt(S.vox.cell,2);
+      refreshModel();
+    }
+  }else if(k==='K'){
+    const hit=rayPlane(ray.o,ray.d,[0,1,0],M.y1);
+    if(hit){
+      const r0=Math.hypot(hit[0]-S.offX,hit[2]-S.offZ);
+      S.topK=clamp(r0/Math.max(S.R,1e-6),0,1);
+      S.sideType=(Math.abs(S.topK-1)<1e-6?'prism':(S.topK<=1e-6?'cone':'frustum'));
+      syncUI(); refreshModel();
+    }
+  }
+}
+function addPick(x,y,z,src){
+  if(S.picks.length>=12){toast('最多支持 12 个点','bad');return;}
+  S.picks.push({id:S.pid++,x,y,z,src:src||'手动'});
+  renderPicks(); invalidate();
+  toast('已添加第 '+S.picks.length+' 个点','good');
+  if(S.picks.length>=3) trySection(true);
+}
+function removePick(id){
+  S.picks=S.picks.filter(p=>p.id!==id);
+  renderPicks(); invalidate();
+  if(S.picks.length>=3&&S.section&&S.section.fromPicks) trySection(true);
+}
+function renderPicks(){
+  const tb=document.querySelector('#ptable tbody');
+  tb.innerHTML=S.picks.map((p,i)=>
+    '<tr>'+
+    '<td>'+(i+1)+'</td>'+
+    '<td><input type="number" step="0.01" data-ax="x" data-id="'+p.id+'" value="'+fmt(p.x,2)+'"></td>'+
+    '<td><input type="number" step="0.01" data-ax="y" data-id="'+p.id+'" value="'+fmt(p.y,2)+'"></td>'+
+    '<td><input type="number" step="0.01" data-ax="z" data-id="'+p.id+'" value="'+fmt(p.z,2)+'"></td>'+
+    '<td><span class="tag '+(p.src==='顶点'?'':(p.src==='棱上'?'e':'m'))+'">'+p.src+'</span></td>'+
+    '<td class="del" data-del="'+p.id+'">×</td>'+
+    '</tr>').join('')||'<tr><td colspan="6" style="color:#94a3b8;padding:10px 0">尚未取点 —— 在立体表面单击，或用下方「按棱取点 / 坐标输入」添加</td></tr>';
+  tb.querySelectorAll('input[data-ax]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const id=+el.dataset.id, ax=el.dataset.ax;
+      const p=S.picks.find(q=>q.id===id); if(!p) return;
+      const v=parseFloat(el.value); if(isNaN(v)) return;
+      p[ax]=v; p.src='坐标';
+      invalidate();
+      if(S.picks.length>=3&&S.section&&S.section.fromPicks) trySection(true);
+    });
+  });
+  tb.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>removePick(+el.dataset.del)));
+  document.getElementById('btnDoSec').disabled=S.picks.length<3;
+}
+
+/* =========================================================
+   9. 执行截面
+   ========================================================= */
+function trySection(silent){
+  const a=document.getElementById('alert');
+  const pts=S.picks.map(p=>[p.x,p.y,p.z]);
+  const res=planeFromPoints(pts);
+  if(!res.ok){
+    showAlert(a,'err',res.msg);
+    showAlert(document.getElementById('alert2'),'info','尚未生成截面：所选点未构成有效平面。');
+    S.section=null; setMetrics(null); drawSection2D(); invalidate(); updateHud();
+    return false;
+  }
+  const sec=computeSection(res.plane);
+  if(!sec.ok||!sec.poly){
+    showAlert(a,'err','平面求交失败：'+sec.why);
+    showAlert(document.getElementById('alert2'),'info','尚未生成截面：平面与立体未相交出闭合区域。');
+    S.section=null; setMetrics(null); drawSection2D(); invalidate(); updateHud();
+    return false;
+  }
+  const holes=loopDesc(res.plane,sec.loops);
+  const secCells=sec.cells||(S.mode==='voxel'?voxCellsForPlane(res.plane):null);
+  const cellTxt=(secCells&&secCells.length)?('切到 '+secCells.length+' 个小方块'):(polyLen(sec.poly)+' 边形');
+  S.section={plane:res.plane, poly:sec.poly, loops:sec.loops||[], cells:secCells, fromPicks:true,
+             info:'自定义 '+cellTxt+holes};
+  setMetrics(sec.poly,res.plane,sec.loops,secCells);
+  document.getElementById('alert2').className='alert';
+  showAlert(a,'ok','共面校验通过（每点偏离 ≤ '+fmt(res.maxDev,4)+'）：已作出过全部 '+pts.length+' 个点的截面。');
+  drawSection2D(); invalidate(); updateHud();
+  return true;
+}
+function loopDesc(pl,loops){
+  if(!loops||loops.length<2) return '';
+  const c=classifyLoops(pl,loops);
+  return (c.holes?' · 含 '+c.holes+' 个洞':'')+(c.regions>1?' · '+c.regions+' 块分离区域':'');
+}
+function polyLen(p){return p.length;}
+function showAlert(el,cls,msg){el.className='alert '+cls;el.innerHTML=msg;}
+
+/* 常见截面 */
+function presetPlane(){
+  const M=S.model;
+  let s=S.psS*spanOf(), phi=S.psPhi*Math.PI/180, r=S.psR*M.maxR, th=S.psTheta*Math.PI/180;
+  const ybase=M.y0+s;
+  if(S.scType==='h') return makePlane([0,1,0],[0,ybase,0]);
+  const nrmH=[-Math.sin(phi),0,Math.cos(phi)];
+  if(S.scType==='v'){
+    const p=[nrmH[0]*r+M.center[0],M.center[1],nrmH[2]*r+M.center[2]];
+    return makePlane(nrmH,p);
+  }
+  // 倾斜：法向在竖直方向抬起 θ
+  const nh=normv([Math.cos(phi),0,Math.sin(phi)]);
+  const n=normv(addv(mulv([0,1,0],Math.cos(th)),mulv(nh,Math.sin(th))));
+  const p=[nh[0]*r*Math.cos(th)+M.center[0], ybase, nh[2]*r*Math.cos(th)+M.center[2]];
+  return makePlane(n,p);
+}
+function doPreset(){
+  if(S.scType==='none'){ S.section=null; setMetrics(null); drawSection2D(); invalidate(); updateHud();
+    showAlert(document.getElementById('alert2'),'info','已隐藏截面。'); return; }
+  const pl=presetPlane();
+  const sec=computeSection(pl);
+  const a=document.getElementById('alert2');
+  if(!sec.ok||!sec.poly){
+    S.section=null; setMetrics(null);
+    showAlert(a,'err','该平面与立体无闭合截口（可能在体外），请调整参数。');
+  }else{
+    const holes=loopDesc(pl,sec.loops);
+    const secCells=sec.cells||(S.mode==='voxel'?voxCellsForPlane(pl):null);
+    const cellTxt=(secCells&&secCells.length)?(' · '+secCells.length+' 格'):(' · '+polyLen(sec.poly)+' 边形');
+    S.section={plane:pl,poly:sec.poly,loops:sec.loops||[],cells:secCells,fromPicks:false,info:'预设截面'+cellTxt+holes};
+    setMetrics(sec.poly,pl,sec.loops);
+    showAlert(a,'ok','已生成截口多边形，周长与面积见上方指标。');
+  }
+  drawSection2D(); invalidate(); updateHud();
+}
+
+/* =========================================================
+   10. UI 绑定
+   ========================================================= */
+const isRound=()=>S.pre==='sphere'||S.pre==='ellipsoid'||S.baseType==='circle';
+const PDEF=[
+  {k:'n',     label:'底面边数 n',   min:3, max:16, step:1,    vis:()=>S.baseType==='poly'&&S.pre!=='sphere'&&S.pre!=='ellipsoid'&&S.pre!=='regular'},
+  {k:'seg',   label:'圆周细分',     min:12,max:64, step:1,    vis:()=>false},   // 渲染细节，不放建模参数
+  {k:'sR',    label:'球半径 R',     min:0.3,max:6, step:0.05, vis:()=>S.pre==='sphere'},
+  {k:'eA',    label:'椭球半轴 a',   min:0.3,max:6, step:0.05, vis:()=>S.pre==='ellipsoid'},
+  {k:'eB',    label:'椭球半轴 b',   min:0.3,max:6, step:0.05, vis:()=>S.pre==='ellipsoid'},
+  {k:'eC',    label:'椭球半轴 c',   min:0.3,max:6, step:0.05, vis:()=>S.pre==='ellipsoid'},
+  {k:'lon',   label:'经线密度',     min:8, max:48, step:1,    vis:()=>S.pre==='sphere'||S.pre==='ellipsoid'},
+  {k:'lat',   label:'纬线密度',     min:4, max:32, step:1,    vis:()=>S.pre==='sphere'||S.pre==='ellipsoid'},
+  {k:'gR',    label:'外接球半径 R', min:0.3,max:6, step:0.05, vis:()=>S.pre==='regular'},
+  {k:'R',     label:'底面半径 R',   min:0.4,max:6, step:0.05, vis:()=>!(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular')},
+  {k:'h',     label:'高度 h',       min:0.2,max:10,step:0.05, vis:()=>!(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular')},
+  {k:'topK',  label:'顶面缩放 k',   min:0,  max:1, step:0.01, vis:()=>!(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular')},
+  {k:'twist', label:'扭转角 (°)',   min:-120,max:120,step:1,  vis:()=>S.topK>1e-6&&!(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular')},
+  {k:'offX',  label:'顶面偏心 X',   min:-3, max:3,  step:0.05,vis:()=>!(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular')},
+  {k:'offZ',  label:'顶面偏心 Z',   min:-3, max:3,  step:0.05,vis:()=>!(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular')}
+];
+function buildParams(){
+  const box=document.getElementById('paramBox');
+  box.innerHTML=PDEF.map(d=>
+    '<div class="row" data-row="'+d.k+'"><span title="'+d.label+'">'+d.label+'</span>'+
+    '<input type="range" id="r_'+d.k+'" min="'+d.min+'" max="'+d.max+'" step="'+d.step+'" value="'+S[d.k]+'">'+
+    '<input type="number" id="n_'+d.k+'" step="'+d.step+'" value="'+S[d.k]+'"></div>').join('');
+  PDEF.forEach(d=>{
+    const r=document.getElementById('r_'+d.k), n=document.getElementById('n_'+d.k);
+    const upd=v=>{
+      let val=parseFloat(v); if(isNaN(val)) return;
+      if(d.k==='n'||d.k==='seg'||d.k==='lon'||d.k==='lat') val=Math.round(val);
+      val=clamp(val,d.min,d.max);
+      S[d.k]=val; syncUI(); refreshModel();
+      if(S.section&&S.section.fromPicks===false) doPreset();
+      if(S.section&&S.section.fromPicks) trySection(true);
+    };
+    r.addEventListener('input',e=>upd(e.target.value));
+    n.addEventListener('change',e=>upd(e.target.value));
+  });
+}
+function syncUI(){
+  PDEF.forEach(d=>{
+    const row=document.querySelector('[data-row="'+d.k+'"]');
+    if(row) row.style.display=d.vis()?'':'none';
+    const r=document.getElementById('r_'+d.k), n=document.getElementById('n_'+d.k);
+    if(r&&document.activeElement!==r) r.value=S[d.k];
+    if(n&&document.activeElement!==n) n.value=(d.step>=1?Math.round(S[d.k]):fmt(S[d.k],3));
+  });
+  const vox=(S.mode==='voxel'), cub=(S.mode==='cube');
+  document.getElementById('dlVox').style.display=vox?'':'none';
+  document.getElementById('dlBrush').style.display=vox?'':'none';
+  document.getElementById('dlCube').style.display=cub?'':'none';
+  document.getElementById('dlCubeFaces').style.display=cub?'':'none';
+  const tabs=document.getElementById('tabs');
+  tabs.style.display=cub?'none':'flex';
+  document.getElementById('tabCube').style.display=cub?'':'none';
+  const s2=document.getElementById('dlSec2d'); if(s2) s2.style.display=cub?'none':'';
+  document.getElementById('tabPreset').style.display=(!cub&&curTab==='preset')?'':'none';
+  document.getElementById('tabCustom').style.display=(!cub&&curTab==='custom')?'':'none';
+  document.getElementById('dlShape').style.display=(vox||cub)?'none':'';
+  const extra=(S.pre==='sphere'||S.pre==='ellipsoid'||S.pre==='regular');
+  document.getElementById('rowRegKind').style.display=(S.pre==='regular')?'':'none';
+  document.getElementById('swLattice').style.display=(S.pre==='sphere'||S.pre==='ellipsoid')?'':'none';
+  document.getElementById('regInfo').textContent=(S.pre==='regular'&&S.model&&S.model.reg)
+    ? '面 '+S.model.nf+' 个 · 棱 '+S.model.ne+' 条 · 顶点 '+S.model.nv+' 个（欧拉公式 V−E+F=2 恒成立）'
+    : (S.pre==='regular'?'切换上面的下拉可选择五种正多面体。':'');
+  document.querySelector('#dlShape .row').style.display=extra?'none':'';
+  document.getElementById('sideType').parentElement.style.display=extra?'none':'';
+  const rowSeg=document.getElementById('rowSeg');
+  if(rowSeg) rowSeg.style.display=(S.baseType==='circle'&&!extra)?'':'none';
+  document.getElementById('dlEdge').style.display=(vox||cub||(S.model&&S.model.sph))?'none':'';
+  document.getElementById('dlDims').style.display=(vox||cub)?'none':'';
+  document.getElementById('dlBase').style.display=(!vox&&!cub&&S.baseType==='custom')?'':'none';
+  document.getElementById('baseType').value=S.baseType;
+  document.getElementById('sideType').value=S.sideType;
+  if(S.model) syncEdgeD();
+}
+function setSide(k){
+  S.sideType=k;
+  if(k==='prism') S.topK=1;
+  if(k==='cone') S.topK=0;
+  if(k==='frustum') S.topK=0.55;
+}
+document.getElementById('sideType').addEventListener('change',e=>{
+  const old=S.sideType; setSide(e.target.value);
+  if(e.target.value==='frustum'&&old==='cone'&&Math.abs(S.topK-0)<1e-9) S.topK=0.55;
+  syncUI(); refreshModel(); if(S.section) doPreset();
+});
+document.getElementById('baseType').addEventListener('change',e=>{
+  S.baseType=e.target.value; syncUI(); refreshModel(); renderBaseTable(); if(S.section) doPreset();
+});
+document.querySelectorAll('#chips .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#chips .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on');
+  const p=c.dataset.pre;
+  const map={prism:['poly','prism'],pyramid:['poly','cone'],frustum:['poly','frustum'],
+             cyl:['circle','prism'],cone:['circle','cone'],fcone:['circle','frustum'],
+             sphere:['circle','prism'],ellipsoid:['circle','prism'],regular:['poly','prism'],
+             custom:['custom','frustum']};
+  S.pre=p;
+  if(p==='sphere'||p==='ellipsoid'||p==='regular'){ /* 这三种不用底面/侧面参数 */ }
+  else{ S.baseType=map[p][0]; setSide(map[p][1]); }
+  if(p==='custom'&&S.custom.length<3) S.custom=[[1,0],[0.42,0.92],[-0.62,0.72],[-1,-0.32],[0.18,-1]];
+  syncUI(); refreshModel(); renderBaseTable(); drawBaseEditor();
+  if(S.section) doPreset();
+  toast('已切换为「'+c.textContent+'」','good');
+}));
+document.getElementById('regKind').addEventListener('change',e=>{
+  S.regKind=e.target.value; syncUI(); refreshModel(); if(S.section) doPreset();
+  toast('已切换为 '+REG_SOLIDS[S.regKind].name,'good');
+});
+document.getElementById('opLattice').addEventListener('change',e=>{
+  S.lattice=e.target.checked; invalidate();
+});
+// 显示选项
+const bindOp=(id,key,extra)=>{
+  const el=document.getElementById(id);
+  el.addEventListener('change',()=>{S[key]=el.checked; if(extra)extra(); invalidate();});
+};
+bindOp('opFaces','opFaces');bindOp('opEdges','opEdges');bindOp('opVerts','opVerts');
+bindOp('opGizmo','opGizmo');bindOp('opDim','opDim');bindOp('opGrid','opGrid');bindOp('opVoid','opVoid');
+document.getElementById('opAuto').addEventListener('change',e=>{S.autoRot=e.target.checked;});
+document.getElementById('opAlpha').addEventListener('input',e=>{
+  S.opacity=parseFloat(e.target.value);
+  document.getElementById('opAlphaV').textContent=fmt(S.opacity,2); invalidate();
+});
+document.getElementById('opSeg').addEventListener('input',e=>{
+  S.seg=clamp(Math.round(+e.target.value),12,72);
+  document.getElementById('opSegV').textContent=S.seg;
+  refreshModel(); if(S.section) doPreset();
+});
+document.getElementById('btnView').addEventListener('click',()=>{
+  cam.theta=-0.95;cam.phi=0.42;cam.dist=11.5;cam.target=[0,0,0];invalidate();
+});
+// 自定义底面表格
+function renderBaseTable(){
+  const el=document.getElementById('btable'); if(!el) return;
+  el.innerHTML=
+    '<tr><th>#</th><th>X</th><th>Z</th><th></th></tr>'+
+    S.custom.map((p,i)=>
+      '<tr><td>'+(i+1)+'</td>'+
+      '<td><input type="number" step="0.05" data-bx="'+i+'" value="'+p[0]+'"></td>'+
+      '<td><input type="number" step="0.05" data-bz="'+i+'" value="'+p[1]+'"></td>'+
+      '<td class="del" data-bdel="'+i+'">×</td></tr>').join('');
+  const tb=el;
+  tb.querySelectorAll('input[data-bx]').forEach(el2=>el2.addEventListener('change',()=>{
+    S.custom[+el2.dataset.bx][0]=clamp(parseFloat(el2.value)||0,-1,1); refreshModel(); drawBaseEditor(); if(S.section) doPreset();
+  }));
+  tb.querySelectorAll('input[data-bz]').forEach(el2=>el2.addEventListener('change',()=>{
+    S.custom[+el2.dataset.bz][1]=clamp(parseFloat(el2.value)||0,-1,1); refreshModel(); drawBaseEditor(); if(S.section) doPreset();
+  }));
+  tb.querySelectorAll('[data-bdel]').forEach(el2=>el2.addEventListener('click',()=>{
+    if(S.custom.length<=3){toast('底面至少需要 3 个顶点','bad');return;}
+    S.custom.splice(+el2.dataset.bdel,1); renderBaseTable(); drawBaseEditor(); refreshModel();
+  }));
+}
+document.getElementById('addBasePt').addEventListener('click',()=>{
+  const last=S.custom[S.custom.length-1]||[0,0];
+  S.custom.push([fmt(last[0]*0.8,2),fmt(last[1]*0.8+0.3,2)]);
+  renderBaseTable(); drawBaseEditor(); refreshModel();
+});
+document.getElementById('resetBasePt').addEventListener('click',()=>{
+  S.custom=[[1,0],[0.42,0.92],[-0.62,0.72],[-1,-0.32],[0.18,-1]];
+  renderBaseTable(); drawBaseEditor(); refreshModel();
+});
+document.getElementById('polyFromNow').addEventListener('click',()=>{
+  const nn=Math.max(3,Math.round(S.n)); const out=[];
+  for(let i=0;i<nn;i++){const a=i*2*Math.PI/nn;out.push([fmt(Math.cos(a),3),fmt(Math.sin(a),3)]);}
+  S.custom=out; renderBaseTable(); drawBaseEditor(); refreshModel(); toast('已换成正 '+nn+' 边形','good');
+});
+/* ---------- 自定义底面：画布直接拖点 ---------- */
+function baseEdMap(){                            // 画布像素 ↔ 单位坐标 (±1)
+  const cvE=document.getElementById('baseEd');
+  if(!cvE||typeof cvE.getContext!=='function') return null;
+  const W=cvE.width, Hh=cvE.height;
+  return {cvE,W,Hh,cx:W/2,cy:Hh/2,rad:Math.min(W,Hh)/2-16,
+          toPx:p=>[W/2+p[0]*(Math.min(W,Hh)/2-16), Hh/2+p[1]*(Math.min(W,Hh)/2-16)],
+          toUv:(x,y)=>[(x-W/2)/(Math.min(W,Hh)/2-16), (y-Hh/2)/(Math.min(W,Hh)/2-16)]};
+}
+function drawBaseEditor(){
+  const m=baseEdMap(); if(!m) return;
+  const g=m.cvE.getContext('2d'); if(!g||!g.beginPath) return;
+  g.clearRect(0,0,m.W,m.Hh);
+  // 单位圆参考 + 十字
+  g.strokeStyle='#e2e8f0';g.lineWidth=1;
+  g.beginPath();g.arc(m.cx,m.cy,m.rad,0,7);g.stroke();
+  g.beginPath();g.moveTo(m.cx-m.rad,m.cy);g.lineTo(m.cx+m.rad,m.cy);
+  g.moveTo(m.cx,m.cy-m.rad);g.lineTo(m.cx,m.cy+m.rad);g.stroke();
+  const P=S.custom.map(p=>m.toPx(p));
+  g.beginPath();g.moveTo(P[0][0],P[0][1]);
+  for(let i=1;i<P.length;i++) g.lineTo(P[i][0],P[i][1]);
+  g.closePath();
+  g.fillStyle='rgba(13,148,136,.13)';g.fill();
+  g.strokeStyle='#0d9488';g.lineWidth=2;g.stroke();
+  P.forEach((p,i)=>{
+    g.beginPath();g.arc(p[0],p[1],6.5,0,7);
+    g.fillStyle='#fff';g.fill();g.strokeStyle='#0d9488';g.lineWidth=2.2;g.stroke();
+    g.fillStyle='#0f766e';g.font='700 9px sans-serif';g.textAlign='center';g.textBaseline='middle';
+    g.fillText(String(i+1),p[0],p[1]+0.5);
+  });
+}
+(function bindBaseEditor(){
+  const cvE=document.getElementById('baseEd'); if(!cvE) return;
+  let drag=-1;
+  const pos=e=>{const r=cvE.getBoundingClientRect();
+    return [(e.clientX-r.left)*cvE.width/r.width, (e.clientY-r.top)*cvE.height/r.height];};
+  const nearestIdx=(x,y)=>{
+    const m=baseEdMap(); let bd=13,bi=-1;
+    S.custom.forEach((p,i)=>{const q=m.toPx(p);const d=Math.hypot(q[0]-x,q[1]-y);if(d<bd){bd=d;bi=i;}});
+    return bi;
+  };
+  cvE.addEventListener('pointerdown',e=>{
+    const [x,y]=pos(e), m=baseEdMap();
+    const i=nearestIdx(x,y);
+    if(i>=0){ drag=i; cvE.setPointerCapture(e.pointerId); return; }
+    if(S.custom.length>=16){ toast('底面最多 16 个顶点','bad'); return; }
+    // 在最近的一条边上插入新点
+    let best=null;
+    for(let a=0;a<S.custom.length;a++){
+      const b=(a+1)%S.custom.length;
+      const p=m.toPx(S.custom[a]), q=m.toPx(S.custom[b]);
+      const vx=q[0]-p[0], vy=q[1]-p[1], L2=vx*vx+vy*vy||1;
+      let t=clamp(((x-p[0])*vx+(y-p[1])*vy)/L2,0,1);
+      const d=Math.hypot(x-(p[0]+vx*t), y-(p[1]+vy*t));
+      if(!best||d<best.d) best={d,after:a,t};
+    }
+    if(!best) return;
+    const A=S.custom[best.after], B=S.custom[(best.after+1)%S.custom.length];
+    const np=[fmt(A[0]+(B[0]-A[0])*best.t,3), fmt(A[1]+(B[1]-A[1])*best.t,3)];
+    S.custom.splice(best.after+1,0,np); drag=best.after+1;
+    cvE.setPointerCapture(e.pointerId);
+    refreshModel(); drawBaseEditor();
+  });
+  cvE.addEventListener('pointermove',e=>{
+    if(drag<0) return;
+    const [x,y]=pos(e), m=baseEdMap();
+    const u=m.toUv(x,y), d=Math.hypot(u[0],u[1]);
+    const k=d>1?1/d:1;                            // 限制在单位圆内
+    S.custom[drag]=[clamp(u[0]*k,-1,1),clamp(u[1]*k,-1,1)];
+    refreshModel(); drawBaseEditor();
+  });
+  const end=()=>{
+    if(drag<0) return; drag=-1;
+    S.custom=S.custom.map(p=>[fmt(p[0],3),fmt(p[1],3)]);
+    renderBaseTable(); drawBaseEditor(); refreshModel();
+    if(S.section) doPreset();
+  };
+  cvE.addEventListener('pointerup',end);
+  cvE.addEventListener('pointercancel',end);
+  cvE.addEventListener('dblclick',e=>{
+    const [x,y]=pos(e), i=nearestIdx(x,y);
+    if(i<0) return;
+    if(S.custom.length<=3){toast('底面至少需要 3 个顶点','bad');return;}
+    S.custom.splice(i,1); renderBaseTable(); drawBaseEditor(); refreshModel();
+  });
+})();
+// 常见截面 UI
+function syncPres(){
+  document.querySelectorAll('#pres .chip').forEach(c=>c.classList.toggle('on',c.dataset.sc===S.scType));
+  const rows={h:['psS'],v:['psPhi','psR'],t:['psS','psPhi','psR','psTheta'],none:[]};
+  const show=rows[S.scType]||[];
+  ['psS','psPhi','psR','psTheta'].forEach(id=>{
+    document.getElementById(id).parentElement.style.display=show.includes(id)?'':'none';
+  });
+  document.getElementById('btnShowSec').disabled=(S.scType==='none');
+}
+document.querySelectorAll('#pres .chip').forEach(c=>c.addEventListener('click',()=>{
+  S.scType=c.dataset.sc; syncPres(); doPreset();
+}));
+const PS_EL={psS:'psSv', psPhi:'psPhiV', psR:'psRv', psTheta:'psThetaV'};
+const bindPS=(id,key,fmtf)=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{
+    S[key]=parseFloat(el.value);
+    document.getElementById(PS_EL[id]).textContent=fmtf(S[key]);
+    if(S.scType!=='none') doPreset();
+  });
+};
+bindPS('psS','psS',v=>fmt(v*S.h,2));
+bindPS('psPhi','psPhi',v=>Math.round(v)+'°');
+bindPS('psR','psR',v=>fmt(v*S.model.maxR,2));
+bindPS('psTheta','psTheta',v=>Math.round(v)+'°');
+function refreshPSLabels(){          // 尺寸改变后同步右侧实际数值
+  document.getElementById('psSv').textContent=fmt(S.psS*spanOf(),2);
+  document.getElementById('psRv').textContent=fmt(S.psR*S.model.maxR,2);
+}
+document.getElementById('btnShowSec').addEventListener('click',doPreset);
+/* ---------- 一键截面：按形状直接切 ---------- */
+function syncPSUI(){
+  const f={psS:()=>fmt(S.psS*spanOf(),2),psPhi:()=>Math.round(S.psPhi)+'°',
+           psR:()=>fmt(S.psR*S.model.maxR,2),psTheta:()=>Math.round(S.psTheta)+'°'};
+  for(const id in f){
+    const el=document.getElementById(id); if(!el) continue;
+    el.value=S[id];
+    const tx=document.getElementById(PS_EL[id]); if(tx) tx.textContent=f[id]();
+  }
+}
+function setPreset(o){
+  if(!o) return false;
+  if(o.sc) S.scType=o.sc;
+  ['psS','psPhi','psR','psTheta'].forEach(k=>{ if(o[k]!==undefined) S[k]=o[k]; });
+  syncPres(); syncPSUI(); doPreset();
+  return !!(S.section&&S.section.poly);
+}
+function polyArea3(poly,pl){
+  let a=0;
+  for(let i=0;i<poly.length;i++){
+    const p=poly[i], q=poly[(i+1)%poly.length];
+    a+=dotv(p,pl.u)*dotv(q,pl.v)-dotv(q,pl.u)*dotv(p,pl.v);
+  }
+  return Math.abs(a)/2;
+}
+function trialSection(o){                        // 试算一个候选平面（不污染当前状态）
+  const bak={scType:S.scType,psS:S.psS,psPhi:S.psPhi,psR:S.psR,psTheta:S.psTheta};
+  S.scType=o.sc||o.scType||S.scType;
+  S.psS=o.psS; S.psPhi=o.psPhi; S.psR=o.psR; S.psTheta=o.psTheta;
+  let res=null;
+  try{
+    const pl=presetPlane(); if(pl){ const sec=computeSection(pl); if(sec.ok&&sec.poly) res={sec,pl}; }
+  }catch(err){ res=null; }
+  Object.assign(S,bak);
+  return res;
+}
+let SEC_SCAN={sig:'',lvl:0,map:null};
+function secScan(lvl){                           // 扫描「每种边数的最佳截面」；lvl=2 更细（更慢）
+  lvl=lvl||1;
+  const sig=[S.mode,S.pre,S.baseType,S.n,S.seg,S.R,S.h,S.topK,S.twist,S.offX,S.offZ,
+             S.regKind,S.sR,S.eA,S.eB,S.eC,S.gR,JSON.stringify(S.custom)].join('|');
+  if(SEC_SCAN.sig===sig&&SEC_SCAN.lvl>=lvl&&SEC_SCAN.map) return SEC_SCAN.map;
+  const map=(SEC_SCAN.sig===sig&&SEC_SCAN.map)?SEC_SCAN.map:{};
+  let budget=(lvl>=2)?16000:2600;                // 试算预算，防止卡死
+  const put=o=>{
+    if(budget--<=0) return;
+    const r=trialSection(o); if(!r) return;
+    const n=polyLen(r.sec.poly);
+    if(n<3||n>12) return;
+    if(r.sec.loops&&r.sec.loops.length>1) return;               // 带洞的不算
+    const a=polyArea3(r.sec.poly,r.pl);
+    if(!map[n]||a>map[n].a) map[n]={o:{sc:o.sc,psS:o.psS,psPhi:o.psPhi,psR:o.psR,psTheta:o.psTheta},a};
+  };
+  for(let si=1;si<=24;si++) put({sc:'h',psS:si/25,psPhi:0,psR:0,psTheta:45});
+  for(let phi=0;phi<360;phi+=15) for(const r of [0,0.4,0.8,1.2,1.6])
+    put({sc:'v',psS:0.5,psPhi:phi,psR:r,psTheta:45});
+  for(let th=15;th<=75;th+=15) for(let phi=0;phi<360;phi+=30)
+    for(const r of [0,0.8,1.6]) for(const s of [0.25,0.5,0.75])
+      put({sc:'t',psS:s,psPhi:phi,psR:r,psTheta:th});
+  if(lvl>=2){                                    // 精扫：更密的方位 / 倾角，更大的偏置
+    let go=true;
+    for(let th=5;th<=85&&go;th+=5) for(let phi=0;phi<360;phi+=15)
+      for(const r of [0,0.4,0.9,1.6]) for(let si=1;si<=9;si++){
+        if(budget<=0){go=false;break;}
+        put({sc:'t',psS:si/10,psPhi:phi,psR:r,psTheta:th});
+      }
+  }
+  SEC_SCAN={sig,lvl,map}; return map;
+}
+function findNgon(n){                            // 取 n 条边里面积最大的那一刀；粗扫找不到就精扫一遍
+  let m=secScan(1);
+  if(!m[n]) m=secScan(2);
+  return m[n]?m[n].o:null;
+}
+function achievableSides(){                      // 当前立体实际能切出的边数（升序）
+  return Object.keys(secScan(1)).map(Number).sort((a,b)=>a-b);
+}
+const NGON_NAME=['','','','三角形','四边形','五边形','六边形','七边形','八边形',
+                 '九边形','十边形','十一边形','十二边形'];
+const NGON_MAX=12;                                   // 一键截面支持的边形上限
+function quickList(){
+  const out=[];
+  if(S.mode!=='solid') return out;
+  if(S.pre==='sphere'){
+    out.push({key:'big',label:'大圆（过球心）',apply:()=>setPreset({sc:'h',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+    out.push({key:'small',label:'小圆（不过球心）',apply:()=>setPreset({sc:'h',psS:0.28,psPhi:0,psR:0,psTheta:45})});
+    out.push({key:'sm2',label:'更小的圆',apply:()=>setPreset({sc:'h',psS:0.12,psPhi:0,psR:0,psTheta:45})});
+    return out;
+  }
+  if(S.pre==='ellipsoid'){
+    out.push({key:'e1',label:'水平椭圆',apply:()=>setPreset({sc:'h',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+    out.push({key:'e2',label:'铅垂椭圆',apply:()=>setPreset({sc:'v',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+    out.push({key:'e3',label:'斜椭圆',apply:()=>setPreset({sc:'t',psS:0.5,psPhi:0,psR:0,psTheta:40})});
+    return out;
+  }
+  if(S.baseType==='circle'){
+    const isCone=Math.abs(S.topK)<1e-6, isPrism=Math.abs(S.topK-1)<1e-6;
+    out.push({key:'cir',label:'圆',apply:()=>setPreset({sc:'h',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+    if(isCone){
+      const halfA=Math.atan2(S.R,S.h)*180/Math.PI;
+      const th=Math.round(clamp((90-halfA)*0.7,12,50));
+      out.push({key:'tri',label:'等腰三角形（轴截）',apply:()=>setPreset({sc:'v',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+      out.push({key:'ell',label:'椭圆',apply:()=>setPreset({sc:'t',psS:0.45,psPhi:0,psR:0.12,psTheta:th})});
+    }else if(isPrism){
+      out.push({key:'rect',label:'矩形（轴截）',apply:()=>setPreset({sc:'v',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+      out.push({key:'ell',label:'椭圆',apply:()=>setPreset({sc:'t',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+    }else{
+      out.push({key:'trap',label:'梯形（轴截）',apply:()=>setPreset({sc:'v',psS:0.5,psPhi:0,psR:0,psTheta:45})});
+      out.push({key:'ell',label:'椭圆',apply:()=>setPreset({sc:'t',psS:0.5,psPhi:0,psR:0,psTheta:32})});
+    }
+    return out;
+  }
+  const F=(S.model&&S.model.faces)?Math.min(NGON_MAX,S.model.faces.length):6;
+  const set=[];
+  for(let n=3;n<=Math.max(3,F);n++) set.push(n);            // 理论上限：凸多面体的截面边数不超过面数
+  achievableSides().forEach(n=>{ if(n>=3&&n<=NGON_MAX&&set.indexOf(n)<0) set.push(n); });
+  set.sort((a,b)=>a-b);
+  set.forEach(n=>out.push({key:'n'+n,label:NGON_NAME[n]||(n+'边形'),apply:()=>{
+    const best=findNgon(n); return best?setPreset(best):false;
+  }}));
+  out.push({key:'deep',label:'↻ 精扫全部可能',apply:()=>{
+    secScan(2); renderQuickSec(true);
+    const got=achievableSides().filter(n=>n>=3);
+    toast(got.length?('该立体实际能切出：'+got.map(n=>NGON_NAME[n]||(n+'边形')).join('、')):'这个尺寸下没搜到更多边数','good');
+    return null;                                            // 不是截面动作，只是刷新列表
+  }});
+  return out;
+}
+let qsKey='';
+function renderQuickSec(force){
+  const box=document.getElementById('quickSec'); if(!box) return;
+  const key=[S.mode,S.pre,S.baseType,S.n,S.topK>1e-6?1:0,
+             fmt(S.R,1),fmt(S.h,1),S.sR,S.eA,S.eB,S.eC,S.regKind].join('|');
+  if(!force&&key===qsKey) return; qsKey=key;
+  const polyShape=S.mode==='solid'&&S.pre!=='sphere'&&S.pre!=='ellipsoid'&&S.baseType!=='circle';
+  const list=quickList();
+  if(!list.length){ box.innerHTML='<span class="hintline">当前模式下请在参数面板调整。</span>'; return; }
+  const got=polyShape?achievableSides():[];
+  box.innerHTML=list.map(t=>{
+    const verified=t.key&&t.key[0]==='n'&&got.indexOf(+t.key.slice(1))>=0;
+    return '<div class="chip" data-qs="'+t.key+'" title="点一下直接切出">'+t.label+(verified?' ✓':'')+'</div>';
+  }).join('');
+  box.querySelectorAll('[data-qs]').forEach(el=>el.addEventListener('click',()=>{
+    const t=list.find(x=>x.key===el.dataset.qs); if(!t) return;
+    const r=t.apply();
+    if(r===null) return;                                    // 纯刷新类操作
+    if(r) toast('已切出「'+t.label+'」','good');
+    else toast('当前参数下切不出「'+t.label+'」，可以改改尺寸或换一类','bad');
+  }));
+}
+// ---------- 正方体涂鸦：展开图 / 面 / 画笔 ----------
+const PEN_COLORS=['#e11d48','#f59e0b','#16a34a','#2563eb','#7c3aed','#db2777','#0f172a','#0d9488'];
+function renderPenPalette(){
+  const box=document.getElementById('penPalette'); if(!box) return;
+  box.innerHTML=PEN_COLORS.map(h=>'<div class="swx'+(h.toLowerCase()===S.cube.color.toLowerCase()?' on':'')+
+    '" data-pen="'+h+'" style="background:'+h+'"></div>').join('');
+  box.querySelectorAll('[data-pen]').forEach(el=>el.addEventListener('click',()=>{
+    S.cube.color=el.dataset.pen; S.cube.tool='pen';
+    document.getElementById('penColor').value=S.cube.color;
+    syncTool(); renderPenPalette();
+  }));
+}
+function syncTool(){
+  document.querySelectorAll('#tabCube .chip[data-tool]').forEach(c=>c.classList.toggle('on',c.dataset.tool===S.cube.tool));
+}
+function drawNetPreview(){
+  const cvp=document.getElementById('netPrev'); if(!cvp) return;
+  const g=cvp.getContext('2d'), W=cvp.width, Hh=cvp.height;
+  g.clearRect(0,0,W,Hh);
+  const cells=NETS[S.cube.net].g;
+  let mx=0,my=0;
+  cells.forEach(([x,y])=>{mx=Math.max(mx,x);my=Math.max(my,y);});
+  const cell=Math.min((W-12)/(mx+1),(Hh-12)/(my+1));
+  const ox=(W-cell*(mx+1))/2, oy=(Hh-cell*(my+1))/2;
+  cells.forEach(([x,y],i)=>{
+    const px=ox+x*cell, py=oy+(my-y)*cell;      // y 反向：网格上方 = 屏幕上方
+    g.fillStyle='#fff';g.fillRect(px,py,cell-1.5,cell-1.5);
+    g.strokeStyle='#0d9488';g.lineWidth=1.2;g.strokeRect(px+0.5,py+0.5,cell-2.5,cell-2.5);
+  });
+}
+function renderFaceList(){
+  const box=document.getElementById('faceList'); if(!box) return;
+  box.innerHTML='';
+  for(let i=0;i<6;i++){
+    const d=document.createElement('div');
+    d.className='fcell'+(S.cube.edit===i?' on':'');
+    const c=document.createElement('canvas'); c.width=c.height=64;
+    const x=c.getContext('2d');
+    x.fillStyle='#fff';x.fillRect(0,0,64,64);
+    x.drawImage(CUBE_TEX[i],0,0,64,64);
+    d.appendChild(c);
+    const b=document.createElement('b'); b.textContent=CUBE_NAME[i]; d.appendChild(b);
+    d.addEventListener('click',()=>cubeEditFace(i));
+    box.appendChild(d);
+  }
+}
+function updateCubeUI(){
+  renderFaceList();
+  const el=document.getElementById('cubeNow');
+  if(el) el.innerHTML=S.cube.edit>=0
+    ? '当前绘制：<b>'+CUBE_NAME[S.cube.edit]+'面</b>（共 '+CUBE_STROKES[S.cube.edit].length+' 笔）'
+    : '未选中面：请在立体上单击任一空白面开始绘制。';
+  document.getElementById('netInfo').textContent='当前：'+NETS[S.cube.net].label+'（第 '+(S.cube.net+1)+'/'+NETS.length+' 种）';
+}
+function selectNet(i){
+  S.cube.net=clamp(i,0,NETS.length-1);
+  S.cube.netU=netUnfold(NETS[S.cube.net].tree);
+  S.cube.netRot=netRotationOf(NETS[S.cube.net].cells);
+  S.cube.netCenter=computeNetCenter();
+  computeTexOrder();                     // 换展开图 → 重算六面贴图朝向
+  document.getElementById('netSel').value=S.cube.net;
+  drawNetPreview(); refreshModel(); updateCubeUI();
+}
+document.getElementById('netSel').addEventListener('change',e=>selectNet(+e.target.value));
+document.getElementById('opFlatTex').addEventListener('change',e=>{
+  S.cube.flat=e.target.checked; invalidate();
+  toast(S.cube.flat?'已开启：展开图上六面都正着看（所见即所画）':'已关闭：按真实折叠还原（部分面的画会侧倒）','good');
+});
+document.getElementById('btnFold').addEventListener('click',()=>setFold(S.cube.t>0.5?0:1));
+document.getElementById('foldR').addEventListener('input',e=>{
+  S.cube.t=parseFloat(e.target.value);
+  document.getElementById('foldV').textContent=fmt(S.cube.t,2);
+  applyFoldCam(S.cube.t);
+  refreshModel();
+});
+document.getElementById('btnUndo').addEventListener('click',cubeUndo);
+document.getElementById('btnClearFace').addEventListener('click',cubeClearFace);
+document.getElementById('btnSaveFace').addEventListener('click',cubeSave);
+document.getElementById('btnClearAll').addEventListener('click',cubeClearAll);
+document.getElementById('penW').addEventListener('input',e=>{
+  S.cube.w=parseInt(e.target.value)||9;
+  document.getElementById('penWv').textContent=S.cube.w;
+});
+document.getElementById('penColor').addEventListener('input',e=>{
+  S.cube.color=e.target.value; S.cube.tool='pen'; syncTool(); renderPenPalette();
+});
+document.querySelectorAll('#tabCube .chip[data-tool]').forEach(c=>c.addEventListener('click',()=>{
+  S.cube.tool=c.dataset.tool; syncTool();
+}));
+
+// ---------- 立方体阵列：模式 / 参数 / 画笔 ----------
+function renderPalette(){
+  const box=document.getElementById('palette');
+  if(!box) return;
+  box.innerHTML=VOX_HEX.map((h,i)=>
+    '<div class="swx'+(i===S.vox.cur?' on':'')+'" data-pal="'+i+'" style="background:'+h+'" title="颜色 '+(i+1)+'"></div>').join('');
+  box.querySelectorAll('[data-pal]').forEach(el=>el.addEventListener('click',()=>{
+    S.vox.cur=+el.dataset.pal;
+    S.vox.brush='paint'; syncBrush();          // 选色即视为要涂色
+    renderPalette();
+  }));
+}
+function syncBrush(){
+  document.querySelectorAll('#brushChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.brush===S.vox.brush));
+  if(S.vox.brush!=='fill'){ cancelAimPress(); if(S.vox.aim) cancelAim(); }
+  const row=document.getElementById('rowFillDepth');
+  if(row) row.style.display=(S.vox.brush==='fill')?'':'none';
+  syncFillDepth();
+}
+function refreshVoxHover(){          // 不移动指针也能立刻看到层次变化（改层次 / 换顺序后调用）
+  if(S.vox.aim){ setAimIdx(S.vox.aim.idx); return; }   // 瞄准中由瞄准条说了算，别让侧栏把它顶掉
+  if(!lastVoxPt||S.mode!=='voxel'||S.vox.brush==='view') return;
+  const t=voxTarget(lastVoxPt.x,lastVoxPt.y,basis());
+  S.vox.hover=t;
+  S.vox.hoverKey=t?(t.i+','+t.j+','+t.k):null;
+  syncFillDepth(); invalidate();
+}
+function syncFillDepth(){
+  const box=document.getElementById('fillLayers');
+  const v=document.getElementById('vFillDepthV');
+  const N=Math.max(0,S.vox.fillN|0);
+  const cur=N?Math.min(S.vox.fillIdx|0,N-1):0;
+  if(v) v.textContent=N?('第 '+(cur+1)+' / '+N+' 层'):'无空位';
+  if(!box) return;
+  if(!N){
+    box.innerHTML='<span class="layers-empty">这条视线上没有空位：转一下视角，或先挖掉几块</span>';
+    return;
+  }
+  let h='<button class="lbtn dir" data-forder="1" title="切换填回顺序：由内向外 / 由外向内">'+
+        (S.vox.fillOrder==='in'?'内→外':'外→内')+'</button>';
+  for(let i=0;i<N;i++)
+    h+='<button class="lbtn'+(i===cur?' on':'')+'" data-fdepth="'+i+'" title="填第 '+(i+1)+' 层">'+(i+1)+'</button>';
+  box.innerHTML=h;
+}
+
+/* ---- 长按瞄准：锁定一条视线上的所有空位，把它们「夹在哪两块之间」画出来，由用户自己挑 ---- */
+const AIM_MS=430;
+let aimPress=null, aimTimer=null, aimBar=null;
+
+function cancelAimPress(){ if(aimTimer){clearTimeout(aimTimer);aimTimer=null;} aimPress=null; }
+
+function ensureAimBar(){
+  if(aimBar&&aimBar.parentNode) return aimBar;
+  if(!document.body) return null;
+  aimBar=document.createElement('div');
+  aimBar.id='aimBar';
+  aimBar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:70;'+
+    'display:none;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;'+
+    'padding:9px 12px;border-radius:16px;background:rgba(15,23,42,.95);color:#fff;'+
+    'box-shadow:0 10px 30px rgba(2,6,23,.42);font:600 12px/1.35 system-ui,-apple-system,sans-serif;'+
+    'max-width:min(94vw,580px);touch-action:manipulation';
+  aimBar.addEventListener('click',ev=>{
+    const b=ev.target&&ev.target.closest?ev.target.closest('[data-aim]'):null;
+    if(!b) return;
+    const v=b.dataset.aim;
+    if(v==='ok'){ if(commitAim()){ refreshModel(); updateVoxStat(); } }
+    else if(v==='cancel'){ cancelAim(); }
+    else if(v==='flip'){ S.vox.fillOrder=(S.vox.fillOrder==='in')?'out':'in'; S.vox.fillDepth=0; S.vox.fillIdx=0;
+                         if(S.vox.aim) setAimIdx(0); }
+    else setAimIdx(+v);
+  });
+  document.body.appendChild(aimBar);
+  return aimBar;
+}
+function hideAimBar(){ if(aimBar) aimBar.style.display='none'; }
+function renderAimBar(){
+  const a=S.vox.aim, el=ensureAimBar();
+  if(!el) return;
+  if(!a){ hideAimBar(); return; }
+  const N=a.raw.length, cur=a.idx;
+  const nm=t=>t?('块('+(t.i+1)+','+(t.j+1)+','+(t.k+1)+')'):'边界';
+  let h='<span style="opacity:.9">瞄准：第 <b style="color:#5eead4">'+(cur+1)+'</b> / '+N+' 块</span>';
+  h+='<span style="opacity:.62;font-weight:500">夹在 '+nm(a.front)+' 与 '+nm(a.back)+' 之间</span>';
+  for(let i=0;i<N;i++){
+    h+='<button data-aim="'+i+'" title="选第 '+(i+1)+' 块" style="min-width:28px;height:28px;border-radius:8px;cursor:pointer;'+
+      'border:1px solid '+(i===cur?'#2dd4bf':'rgba(255,255,255,.32)')+';background:'+
+      (i===cur?'#0d9488':'rgba(255,255,255,.10)')+';color:#fff;font:700 12px system-ui,sans-serif">'+(i+1)+'</button>';
+  }
+  h+='<button data-aim="ok" style="height:28px;padding:0 12px;border-radius:8px;border:0;cursor:pointer;'+
+    'background:#10b981;color:#052e23;font:700 12px system-ui,sans-serif">填这块</button>';
+  h+='<button data-aim="cancel" style="height:28px;padding:0 10px;border-radius:8px;cursor:pointer;'+
+    'border:1px solid rgba(255,255,255,.32);background:transparent;color:#e2e8f0;font:600 12px system-ui,sans-serif">取消</button>';
+  el.innerHTML=h;
+  el.style.display='flex';
+}
+function aimNeighbors(a){
+  const c=a.raw[a.idx]; a.front=null; a.back=null;
+  if(!c||!a.all) return;
+  const p=a.all.findIndex(q=>q.i===c.i&&q.j===c.j&&q.k===c.k);
+  if(p<0) return;
+  for(let t=p-1;t>=0;t--){ const q=a.all[t], v=voxAt(q.i,q.j,q.k); if(v&&v.on){ a.front=q; break; } }
+  for(let t=p+1;t<a.all.length;t++){ const q=a.all[t], v=voxAt(q.i,q.j,q.k); if(v&&v.on){ a.back=q; break; } }
+}
+function setAimIdx(i){
+  const a=S.vox.aim; if(!a) return;
+  a.idx=Math.max(0,Math.min(i|0,a.raw.length-1));
+  aimNeighbors(a);
+  const c=a.raw[a.idx];
+  S.vox.hover={i:c.i,j:c.j,k:c.k};
+  S.vox.hoverKey=c.i+','+c.j+','+c.k;
+  S.vox.fillList=a.raw.slice().reverse();      // 虚影按「由外向内」排，第 1 个就是你最先看到的那块
+  S.vox.fillN=a.raw.length;
+  S.vox.fillIdx=a.raw.length-1-a.idx;
+  S.vox.fillDepth=S.vox.fillIdx;
+  renderAimBar(); syncFillDepth(); invalidate();
+}
+function beginAim(x,y,B){
+  const raw=voxRayList(x,y,B,(a,b,c)=>{const q=voxAt(a,b,c);return !!q&&!q.on;},16);
+  if(!raw.length){ S.vox.aim=null; hideAimBar(); return null; }
+  S.vox.aim={x,y,raw,idx:0,all:voxRayList(x,y,B,()=>true,48),front:null,back:null};
+  setAimIdx(0);
+  if(typeof navigator!=='undefined'&&navigator&&navigator.vibrate){ try{navigator.vibrate(12);}catch(_){} }
+  return S.vox.aim;
+}
+function cancelAim(){
+  if(!S.vox.aim) return;
+  S.vox.aim=null; hideAimBar();
+  S.vox.hoverKey=null; S.vox.hover=null;
+  S.vox.fillList=null; S.vox.fillN=0; S.vox.fillIdx=0;
+  syncFillDepth(); invalidate();
+}
+function commitAim(){
+  const a=S.vox.aim; if(!a) return false;
+  const c=a.raw[a.idx], cell=voxAt(c.i,c.j,c.k);
+  S.vox.aim=null; hideAimBar();
+  S.vox.hoverKey=null; S.vox.hover=null;
+  S.vox.fillList=null; S.vox.fillN=0; S.vox.fillIdx=0;
+  if(!cell||cell.on){ syncFillDepth(); invalidate(); return false; }
+  cell.on=true;
+  S.vox.flash={i:c.i,j:c.j,k:c.k,t:nowMs()};
+  toast('已填回块('+(c.i+1)+','+(c.j+1)+','+(c.k+1)+') · 第 '+(a.idx+1)+'/'+a.raw.length+' 块','good');
+  return true;
+}
+function startAimPress(pos,e){
+  cancelAimPress();
+  aimPress={id:e.pointerId,x:pos.x,y:pos.y};
+  aimTimer=setTimeout(()=>{
+    const ap=aimPress; aimPress=null; aimTimer=null;
+    if(!ap||S.mode!=='voxel'||S.vox.brush!=='fill') return;
+    if(!beginAim(ap.x,ap.y,basis())) toast('这条视线上没有空位：转一下视角，或先挖掉几块','bad');
+  },AIM_MS);
+}
+function switchMode(m){
+  if(S.mode===m) return;
+  S.mode=m;
+  S.picks=[]; S.section=null; S.cube.edit=-1;
+  renderPicks(); setMetrics(null); drawSection2D();
+  document.querySelectorAll('#modeChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.mode===m));
+  if(m==='voxel'){ voxReset(S.vox.n); cam.dist=Math.max(cam.dist,voxSize()*3.2); }
+  else if(m==='cube'){
+    if(!S.cube.netU) S.cube.netU=netUnfold(NETS[S.cube.net].tree);
+    computeTexOrder();
+    cam.dist=7.6; cam.theta=1.02; cam.phi=0.30; cam.target=[0,0,0];
+  }
+  else { cam.dist=11.5; }
+  syncUI(); syncBrush(); renderPalette(); syncTool(); renderPenPalette();
+  refreshModel(); updateVoxStat(); updateCubeUI(); drawNetPreview();
+  const msg=m==='voxel' ? '已进入立方体阵列：用「涂色 / 挖除 / 填回」处理小方块（鼠标会预描边），内部方块可用「透视剖层」露出；切回「浏览取点」后单击表面取点做截面。'
+    : (m==='cube' ? '已进入正方体涂鸦：单击任一空白面即可放大绘制，左侧可选 11 种展开图并展开 / 合好。'
+                  : '已切回连续立体模式。');
+  showAlert(document.getElementById('alert'),'info',msg);
+  if(m!=='cube'&&S.scType!=='none') doPreset();
+}
+document.querySelectorAll('#modeChips .chip').forEach(c=>c.addEventListener('click',()=>switchMode(c.dataset.mode)));
+document.querySelectorAll('#brushChips .chip').forEach(c=>c.addEventListener('click',()=>{
+  S.vox.brush=c.dataset.brush; syncBrush();
+  S.vox.hover=null; S.vox.hoverKey=null;
+  toast(c.dataset.brush==='view'?'单击表面 = 取点'
+       :(c.dataset.brush==='fill'?'把鼠标移到挖空的位置，虚线框就是要填回的空位，单击恢复'
+                                 :'已切换为「'+c.textContent+'」操作'), 'good');
+  invalidate();
+}));
+const vBind=(id,fn,fmtf)=>{
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('input',()=>{ fn(parseFloat(el.value)); if(fmtf) fmtf(); refreshModel(); if(S.section) doPreset(); });
+};
+vBind('vn', v=>{ voxReset(Math.round(v)); document.getElementById('vnv').textContent=voxTotal(); syncPeel(); });
+vBind('vcell', v=>{ S.vox.cell=v; document.getElementById('vcellv').textContent=fmt(v,2); });
+vBind('vgap',  v=>{ S.vox.gap=v;  document.getElementById('vgapv').textContent=fmt(v,2); });
+const elLayers=document.getElementById('fillLayers');
+if(elLayers){
+  elLayers.addEventListener('click',e=>{
+    const b=e.target&&e.target.closest?e.target.closest('button'):null;
+    if(!b) return;
+    if(b.dataset.forder){                       // 切换顺序：内→外 / 外→内
+      S.vox.fillOrder=(S.vox.fillOrder==='in')?'out':'in';
+      S.vox.fillDepth=0;                        // 换方向后回到第 1 层（新方向里最靠内的那层）
+    }else if(b.dataset.fdepth!==undefined && b.dataset.fdepth!==''){
+      S.vox.fillDepth=Math.max(0,+b.dataset.fdepth);
+    }else return;
+    refreshVoxHover();
+  });
+}
+
+function voxOp(fn){
+  if(S.mode!=='voxel') return;
+  fn(); refreshModel();
+  if(S.scType!=='none') doPreset();     // 预设截面跟随挖补实时更新
+  invalidate();
+}
+document.getElementById('vAll').addEventListener('click',()=>voxOp(()=>S.vox.cells.forEach(c=>{c.on=true;})));
+document.getElementById('vNone').addEventListener('click',()=>voxOp(()=>S.vox.cells.forEach(c=>{c.on=false;})));
+document.getElementById('vSolid').addEventListener('click',()=>voxOp(()=>{
+  S.vox.cells.forEach(c=>{c.c=S.vox.cur;});          // 一键变回一个颜色（当前选中的那个）
+  toast('已把全部方块统一为当前颜色','good');
+}));
+document.getElementById('vRainbow').addEventListener('click',()=>voxOp(()=>{
+  const n=S.vox.n;
+  for(let k=0;k<n;k++)for(let j=0;j<n;j++)for(let i=0;i<n;i++) voxAt(i,j,k).c=j%VOX_PAINT.length;
+}));
+document.getElementById('vShell').addEventListener('click',()=>voxOp(()=>{
+  const n=S.vox.n;
+  for(let k=0;k<n;k++)for(let j=0;j<n;j++)for(let i=0;i<n;i++)
+    voxAt(i,j,k).on=(i===0||i===n-1||j===0||j===n-1||k===0||k===n-1);
+}));
+document.getElementById('vCore').addEventListener('click',()=>voxOp(()=>{
+  const n=S.vox.n, m=(n-1)/2;
+  S.vox.cells.forEach((c,idx)=>{
+    const i=idx%n, j=Math.floor(idx/n)%n, k=Math.floor(idx/(n*n));
+    if(Math.abs(i-m)<0.51&&Math.abs(j-m)<0.51&&Math.abs(k-m)<0.51) c.on=false;
+  });
+}));
+document.getElementById('vRandom').addEventListener('click',()=>voxOp(()=>{
+  S.vox.cells.forEach(c=>{ c.c=Math.floor(Math.random()*VOX_PAINT.length); });
+}));
+// 透视剖层
+function syncPeel(){
+  const el=document.getElementById('peelN'); if(!el) return;
+  const m=voxMaxPeel();
+  el.min=-m; el.max=m;
+  S.vox.peel=clamp(Math.round(S.vox.peel),-m,m);
+  el.value=S.vox.peel;
+  const t=document.getElementById('peelNv'); if(t) t.textContent=peelText();
+  const ax=document.getElementById('peelAxis'); if(ax) ax.value=S.vox.peelAxis;
+}
+function applyPeel(v){
+  S.vox.peel=clamp(Math.round(v),-voxMaxPeel(),voxMaxPeel());
+  syncPeel();
+  if(S.mode!=='voxel') return;
+  S.vox.hover=null; S.vox.hoverKey=null;
+  refreshModel(); updateVoxStat();
+  if(S.scType!=='none') doPreset();
+}
+document.getElementById('peelAxis').addEventListener('change',e=>{
+  S.vox.peelAxis=e.target.value; applyPeel(S.vox.peel);
+});
+document.getElementById('peelN').addEventListener('input',e=>{
+  applyPeel(parseInt(e.target.value)||0);
+});
+document.getElementById('btnPeel0').addEventListener('click',()=>{
+  applyPeel(0); toast('已恢复完整立方体','good');
+});
+document.getElementById('btnPeelMid').addEventListener('click',()=>{
+  applyPeel(Math.floor(voxMaxPeel()/2)); toast('已'+peelText()+'（现在可直接涂到内部方块）','good');
+});
+
+// 按棱取点
+function buildEdgeSelect(){
+  if(S.mode==='voxel') return;             // 阵列模式用不到「按棱取点」
+  const sel=document.getElementById('edgeSel');
+  const cur=sel.value;
+  if(!S.model.edges||!S.model.edges.length){
+    sel.innerHTML='<option value="0">（球面 / 椭球面没有棱，请直接单击表面取点）</option>';
+    return;
+  }
+  sel.innerHTML=S.model.edges.map((e,i)=>
+    '<option value="'+i+'">'+e.name+'（长 '+fmt(e.len,2)+'）</option>').join('');
+  if(cur&&S.model.edges[+cur]) sel.value=cur;
+  syncEdgeD();
+}
+function selEdge(){return S.model.edges[+document.getElementById('edgeSel').value]||S.model.edges[0];}
+function syncEdgeD(){
+  const e=selEdge(); if(!e||!e.pa) return;
+  const t=parseFloat(document.getElementById('edT').value)||0;
+  document.getElementById('edTv').textContent=fmt(t,3);
+  document.getElementById('edTot').textContent='全长 '+fmt(e.len,2);
+  const dn=document.getElementById('edD');
+  if(document.activeElement!==dn) dn.value=fmt(t*e.len,2);
+}
+document.getElementById('edgeSel').addEventListener('change',()=>{
+  document.getElementById('edT').max=1; syncEdgeD();
+});
+document.getElementById('edT').addEventListener('input',syncEdgeD);
+document.getElementById('edD').addEventListener('input',e=>{
+  const ed=selEdge(); if(!ed) return;
+  const d=parseFloat(e.target.value); if(isNaN(d)) return;
+  document.getElementById('edT').value=clamp(d/ed.len,0,1); syncEdgeD();
+});
+document.getElementById('btnAddEdge').addEventListener('click',()=>{
+  const e=selEdge(); if(!e) return;
+  const t=parseFloat(document.getElementById('edT').value)||0;
+  if(t>=1) toast('该点位于线段端点（输入长度已按全长截断）');
+  const p=lerpv(e.pa,e.pb,t);
+  S.picks.push({id:S.pid++,x:p[0],y:p[1],z:p[2],src:'棱上'});
+  renderPicks(); invalidate();
+  toast('已在「'+e.name+'」距起点 '+fmt(t*e.len,2)+' 处取点','good');
+  if(S.picks.length>=3) trySection(true);
+});
+// 坐标输入
+document.getElementById('btnAddXYZ').addEventListener('click',()=>{
+  const x=parseFloat(document.getElementById('inx').value),
+        y=parseFloat(document.getElementById('iny').value),
+        z=parseFloat(document.getElementById('inz').value);
+  if([x,y,z].some(isNaN)){toast('请填写完整坐标','bad');return;}
+  const ns=nearestSurfacePoint([x,y,z]);
+  if(ns&&ns.d>0.06*S.model.diag){
+    toast('该点距立体表面 '+fmt(ns.d,3)+'，已自动吸附到最近表面位置','bad');
+  }
+  const p=ns?ns.p:[x,y,z];
+  S.picks.push({id:S.pid++,x:p[0],y:p[1],z:p[2],src:'坐标'});
+  renderPicks(); invalidate();
+  toast('已按坐标添加第 '+S.picks.length+' 个点','good');
+  if(S.picks.length>=3) trySection(true);
+});
+document.getElementById('btnSnap').addEventListener('click',()=>{
+  const x=parseFloat(document.getElementById('inx').value)||0,
+        y=parseFloat(document.getElementById('iny').value)||0,
+        z=parseFloat(document.getElementById('inz').value)||0;
+  const ns=nearestSurfacePoint([x,y,z]); if(!ns) return;
+  document.getElementById('inx').value=fmt(ns.p[0],3);
+  document.getElementById('iny').value=fmt(ns.p[1],3);
+  document.getElementById('inz').value=fmt(ns.p[2],3);
+  toast('已吸附到最近表面（偏移 '+fmt(ns.d,3)+'）','good');
+});
+document.getElementById('btnDoSec').addEventListener('click',()=>{switchTab('custom');trySection(false);});
+document.getElementById('btnPop').addEventListener('click',()=>{
+  if(!S.picks.length){toast('暂无可删除的点','bad');return;}
+  S.picks.pop(); renderPicks(); invalidate();
+  if(S.picks.length<3){S.section=null;setMetrics(null);drawSection2D();showAlert(document.getElementById('alert'),'info','点数不足 3 个，请继续取点。');}
+  else if(S.section&&S.section.fromPicks) trySection(true);
+});
+document.getElementById('btnClr').addEventListener('click',()=>{
+  S.picks=[]; renderPicks();
+  if(S.section&&S.section.fromPicks){S.section=null;setMetrics(null);drawSection2D();}
+  showAlert(document.getElementById('alert'),'info','已清空取点。');
+  invalidate(); updateHud();
+});
+// Tabs
+let curTab='preset';
+function switchTab(k){
+  curTab=k;
+  document.querySelectorAll('#tabs div').forEach(d=>d.classList.toggle('on',d.dataset.tab===k));
+  document.getElementById('tabPreset').style.display=(k==='preset')?'':'none';
+  document.getElementById('tabCustom').style.display=(k==='custom')?'':'none';
+  requestAnimationFrame(()=>drawSection2D());
+}
+document.querySelectorAll('#tabs div').forEach(d=>d.addEventListener('click',()=>switchTab(d.dataset.tab)));
+
+// toast
+let tt=null;
+function toast(msg,cls){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='on '+(cls==='bad'?'bad':(cls==='good'?'good':''));
+  clearTimeout(tt); tt=setTimeout(()=>{el.className='';},2200);
+}
+
+/* =========================================================
+   11. 启动
+   ========================================================= */
+/*       内部对象（便于控制台调试）        */
+window.__LAB={get S(){return S;},get cam(){return cam;},computeSection,planeFromPoints,makePlane,
+              addPick,trySection,doPreset,refreshModel,project,basis,gizmos,switchMode,voxAt,voxReset,pickSurface,
+              brushAt,voxTarget,voxRay,voxRayList,pickHit,refreshVoxHover,syncFillDepth,shrinkPoly,voxCellFill,drawVoxSectionCell,beginAim,setAimIdx,commitAim,cancelAim,aimNeighbors,AIM_MS,voxPeelOK,voxVisibleCount,computeTexOrder,cubeFaceCorners,applyPeel,
+              buildSpheroid,buildRegular,hullFaces,regBaseVerts,quickList,setPreset,findNgon,renderQuickSec,secScan,presetPlane,trialSection,achievableSides,voxSectionCells,voxCellsForPlane,voxCellPoly,polyArea3,VOX_PAINT,setMetrics,draw:()=>draw(),dotTest:dotv,
+              NETS,netUnfold,CUBE_STROKES,redrawFace,cubeEditFace,setFold,selectNet};
+/* ---------- 平板 / 手机：抽屉面板 + 离线缓存 ---------- */
+function setupTouchUI(){
+  const L=document.querySelector('.panel.left'), R=document.querySelector('.panel.right');
+  const scrim=document.getElementById('scrim');
+  const bL=document.getElementById('btnLeft'), bR=document.getElementById('btnRight');
+  if(L&&R&&scrim){
+    const closeAll=()=>{L.classList.remove('open');R.classList.remove('open');scrim.classList.remove('on');};
+    const open=el=>{const was=el.classList.contains('open');closeAll();
+      if(!was){el.classList.add('open');scrim.classList.add('on');}};
+    if(bL) bL.addEventListener('click',()=>open(L));
+    if(bR) bR.addEventListener('click',()=>open(R));
+    scrim.addEventListener('click',closeAll);
+    window.addEventListener('resize',()=>{if(window.innerWidth>=1024) closeAll();});
+    window.__closeDrawers=closeAll;
+  }
+  const tip=document.getElementById('tip');
+  if(tip&&window.matchMedia&&matchMedia('(pointer:coarse)').matches)
+    tip.textContent='单指旋转 · 双指缩放 · 双指拖动平移 · 单击表面取点';
+  // 离线缓存（file:// 下 Service Worker 不可用，静默跳过）
+  const http=typeof location!=='undefined'&&location.protocol.indexOf('http')===0;
+  if(http&&typeof navigator!=='undefined'&&navigator.serviceWorker){
+    window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+  }
+}
+function init(){
+  S.model=buildModel();
+  buildParams(); syncUI(); renderBaseTable(); drawBaseEditor(); renderPicks();
+  buildEdgeSelect(); syncPres(); refreshPSLabels(); renderQuickSec();
+  document.getElementById('regKind').innerHTML=REG_KEYS.map(k=>'<option value="'+k+'">'+REG_SOLIDS[k].label+'</option>').join('');
+  document.getElementById('regKind').value=S.regKind;
+  voxReset(S.vox.n); renderPalette(); syncBrush(); syncPeel();
+  S.cube.netU=netUnfold(NETS[S.cube.net].tree);
+  S.cube.netRot=netRotationOf(NETS[S.cube.net].cells);
+  S.cube.netCenter=computeNetCenter();
+  computeTexOrder();
+  document.getElementById('netSel').innerHTML=NETS.map((n,i)=>'<option value="'+i+'">'+(i+1)+'. '+n.label+'</option>').join('');
+  renderPenPalette(); syncTool(); drawNetPreview(); updateCubeUI();
+  document.getElementById('vnv').textContent=voxTotal();
+  document.getElementById('vcellv').textContent=fmt(S.vox.cell,2);
+  document.getElementById('vgapv').textContent=fmt(S.vox.gap,2);
+  resize();
+  // 默认切到预设并显示一个水平截面
+  doPreset();
+  setupTouchUI();
+  loop();
+  window.addEventListener('resize',()=>{drawSection2D();invalidate();});
+  new ResizeObserver(()=>drawSection2D()).observe(document.getElementById('sec2d').parentElement);
+}
+init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+name: 构建 iOS IPA（需 Apple 开发者账号）
+
+# 这个流程我无法在本机验证（你这是 Windows，iOS 打包必须在 macOS 上完成）。
+# 使用前需要准备：
+#   1. Apple 开发者账号（99 美元/年，个人账号即可）
+#   2. 一个「iOS Distribution」签名证书，导出为 .p12
+#   3. 一个 App Store / Ad Hoc 描述文件（.mobileprovision）
+#   4. 把下面四个 Secrets 填进仓库 Settings → Secrets and variables → Actions：
+#        IOS_CERT_BASE64        = base64 后的 .p12 内容
+#        IOS_CERT_PASSWORD      = 导出 .p12 时设的密码
+#        IOS_PROVISION_BASE64   = base64 后的 .mobileprovision 内容
+#        KEYCHAIN_PASSWORD      = 随便设一个字符串，仅用于 CI 临时钥匙串
+#        IOS_TEAM_ID            = 开发者账号的 Team ID（在 Apple 开发者后台 Membership 页看）
+# 准备好后手动点「Run workflow」即可。
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装 Capacitor 依赖
+        working-directory: app
+        run: npm install
+
+      - name: 生成 iOS 工程并同步网页资源
+        working-directory: app
+        run: |
+          if [ ! -d ios ]; then npx cap add ios; fi
+          npx cap sync ios
+
+      - name: 导入签名证书到临时钥匙串
+        env:
+          CERT_BASE64: ${{ secrets.IOS_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROVISION_BASE64: ${{ secrets.IOS_PROVISION_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          KEYCHAIN=build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN
+          security default-keychain -s $KEYCHAIN
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN
+          security set-keychain-settings -lut 3600 $KEYCHAIN
+          echo "$CERT_BASE64" | base64 --decode > cert.p12
+          security import cert.p12 -k $KEYCHAIN -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROVISION_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/app.mobileprovision
+
+      - name: 生成导出配置
+        working-directory: app/ios/App
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          cat > exportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>ad-hoc</string>
+            <key>teamID</key><string>${IOS_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>compileBitcode</key><false/>
+          </dict></plist>
+          EOF
+
+      - name: 归档并导出 IPA
+        working-directory: app/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive archive \
+            CODE_SIGN_STYLE=Manual
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist exportOptions.plist
+
+      - name: 上传 IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: 截面实验台-iOS-IPA
+          path: app/ios/App/build/ipa/*.ipa
+          retention-days: 30

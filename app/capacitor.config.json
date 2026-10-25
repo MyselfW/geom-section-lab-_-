@@ -1,0 +1,22 @@
+{
+  "appId": "com.myselfw.geomlab",
+  "appName": "截面实验台",
+  "webDir": "www",
+  "loggingEnabled": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "light",
+      "backgroundColor": "#0f766e"
+    }
+  },
+  "android": {
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "contentInset": "always",
+    "scrollEnabled": false
+  }
+}

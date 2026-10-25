@@ -1,0 +1,21 @@
+{
+  "id": "/geometry-section-lab",
+  "name": "立体几何 · 截面实验台",
+  "short_name": "截面实验台",
+  "description": "离线可用的立体几何截面实验台：柱/锥/台、球、椭球、正多面体、立方体阵列、正方体展开涂鸦，支持一键截取 n 边形截面。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

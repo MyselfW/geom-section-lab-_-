@@ -1,0 +1,108 @@
+name: 发布 APK 到 Release
+
+# 触发方式（二选一）：
+#   1) Actions 页面手动点「Run workflow」（推荐，可填版本号）
+#   2) 推送 tag，例如 git tag v1.0.0 && git push origin v1.0.0
+# 作用：云端构建 APK，并自动创建一个带 APK 附件的 Release。
+# Release 附件的直链，公开仓库下任何人免登录即可下载（无需 GitHub 账号）。
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '版本号，例如 v0.0.2'
+        required: true
+        default: 'v0.0.2'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 确定版本号
+        id: ver
+        env:
+          IN_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ -n "$IN_TAG" ]; then
+            echo "tag=$IN_TAG" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 准备 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 准备 Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 安装 Capacitor 依赖
+        working-directory: app
+        run: npm install
+
+      - name: 生成 Android 工程并同步网页资源
+        working-directory: app
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+
+      # 说明：这里刻意用 Debug 构建。Debug 包自带调试签名、拿到即可直接安装；
+      # 而 Release 包在没有配置签名证书时会产出 *-unsigned.apk，手机上装不上。
+      - name: 构建 APK
+        working-directory: app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 收集 APK
+        run: |
+          mkdir -p out
+          APK=$(find app/android/app/build/outputs -name "*.apk" | head -1)
+          echo "找到: $APK"
+          cp "$APK" out/jiemian-lab.apk
+          cp index.html out/立体几何截面实验台-离线单文件版.html
+          ls -la out
+
+      - name: 创建 Release 并上传附件
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: 截面实验台 ${{ steps.ver.outputs.tag }}
+          body: |
+            ## 立体几何 · 截面实验台 ${{ steps.ver.outputs.tag }}
+
+            ### 下载
+
+            | 文件 | 用途 |
+            |---|---|
+            | `jiemian-lab.apk` | 安卓平板 / 手机安装包，直接安装即可，完全离线 |
+            | `立体几何截面实验台-离线单文件版.html` | 单文件网页版，iPad 或电脑可用，双击/传输后直接打开 |
+
+            ### 安装提示
+
+            - 安卓：下载 APK 后允许「未知来源安装」即可。若提示签名不一致，请先卸载旧版本。
+            - iPad：用 Safari 打开 Pages 地址 → 分享 → 添加到主屏幕。
+            - 本页面不含任何个人信息，也不请求任何外部资源，完全离线运行。
+          files: |
+            out/jiemian-lab.apk
+            out/立体几何截面实验台-离线单文件版.html
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
