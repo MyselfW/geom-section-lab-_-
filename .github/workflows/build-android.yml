@@ -10,24 +10,26 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # 固定 24.04 而不用 ubuntu-latest：GitHub 从 2026-10-19 起把 ubuntu-latest 逐步切到 Ubuntu 26，
+    # 构建环境会悄悄变。哪天 24.04 被淘汰导致失败，把下面这行改成 ubuntu-latest 即可。
+    runs-on: ubuntu-24.04
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 准备 Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: 准备 JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: 准备 Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: 安装 Capacitor 依赖
         working-directory: app
@@ -46,7 +48,7 @@ jobs:
           ./gradlew assembleDebug --no-daemon
 
       - name: 上传 APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: 截面实验台-Android-APK
           path: app/android/app/build/outputs/apk/debug/app-debug.apk

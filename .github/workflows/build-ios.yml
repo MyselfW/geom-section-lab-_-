@@ -20,12 +20,12 @@ jobs:
     runs-on: macos-14
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 准备 Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: 安装 Capacitor 依赖
         working-directory: app
@@ -84,7 +84,7 @@ jobs:
             -exportOptionsPlist exportOptions.plist
 
       - name: 上传 IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: 截面实验台-iOS-IPA
           path: app/ios/App/build/ipa/*.ipa
